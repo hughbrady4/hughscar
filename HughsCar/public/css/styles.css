@@ -1,0 +1,80 @@
+
+#map {
+  height: 500px;
+  width: 70%;
+	margin: auto auto 7% auto;
+
+}
+
+/* Optional: Makes the sample page fill the window. */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}*/
+
+
+body {
+	font-family: 'Roboto', sans-serif;
+}
+
+.center {
+	text-align: center;
+  margin: auto;
+  width: 80%;
+  border: 3px solid #73AD21;
+  padding: 10px;
+}
+
+.container {
+	display: flex;
+	flex-wrap: wrap;
+}
+.menu {
+	width: 15%;
+}
+.portfolio {
+	width: 85%;
+}
+.item {
+	width: 100%;
+	clear: both;
+}
+.item img {
+	float: left
+}
+.item span {
+	display: table-cell;
+	vertical-align: middle;
+	height: 240px;
+}
+
+button.mybutton {
+  background-color: #4CAF50;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  cursor: pointer;
+  width: 50%;
+}
+
+button.mybutton:hover {
+  opacity: 0.8;
+}
+
+
+
+.button {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
