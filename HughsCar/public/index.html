@@ -19,13 +19,14 @@
 
 <body>
 
-<div id="transportservice-header-container" style="margin: 7% 25% 7% 25%">
+<div id="transportservice-header-container" style="margin: 3% 7% 3% 7%">
 <div class="center">
 
 <h1>Hugh's Car Service</h1>
 <h2>Irving, Texas</h2>
 <h2>DFW and Love Field Airport Shuttle Service</h2>
 
+<a class="button" id="btn_pick_time">Pickup Time</button>
 <a class="button" href="tel:+1-214-433-3268">Call Now</a>
 
 <div id="message"></div>
@@ -52,7 +53,7 @@
 
    // Initialize Firebase
    firebase.initializeApp(firebaseConfig);
-   firebase.analytics();
+   //firebase.analytics();
    //console.log(firebase);
 
    var data = {lat: null, lng: null, name: null, timestamp: null};
@@ -60,66 +61,154 @@
    var drivers = firebase.database().ref("driver-cur-loc");
    var userLocs = firebase.database().ref("user-locs");
    var userLat = 32.89232732227711;
+   var map;
+   var userLoc;
    var userLng = -96.95597853022022;
+   let markers = [];
+   let infoWindow;
 
-   //console.log(navigator.geolocation);
-   function initMap() {
 
-     let map;
 
-     map = new google.maps.Map(document.getElementById("map"), {
-        center: {lat: userLat, lng: userLng },
-        zoom: 10,
-     });
 
-   initLocation();
+   var timeLink = document.getElementById("btn_pick_time");
+   timeLink.addEventListener("click", initLocation);
+
+   loadDrivers();
+
 
    function initLocation() {
       if (navigator.geolocation) {
-         navigator.geolocation.getCurrentPosition(showPosition, noPosition);
+         navigator.geolocation.getCurrentPosition(setPosition, noPosition);
       } else {
-         message.innerHTML = "<p>Geolocation is not supported by this browser</p>";
-         console.log("Failed to get geolocation from browser");
-      }
-
-      function noPosition(position) {
          message.innerHTML = "<p>Geolocation is not supported by this browser</p>";
          console.log("Failed to get geolocation from browser");
       }
    }
 
-   function showPosition(position) {
-      userLat = position.coords.latitude;
-      userLng = position.coords.longitude;
-      timeStamp = position.timestamp;
 
-      //console.log(position);
-      //console.log(longitude);
-      //console.log(startTime);
+   function noPosition(position) {
+      message.innerHTML = "<p>Geolocation is not supported by this browser</p>";
+      console.log("Failed to get geolocation from browser");
+   }
 
-      firebase.database().ref('user-locs/' + timeStamp).set({
-         lat: userLat,
-         lng: userLng,
+   function setPosition(position) {
+     let userLat = position.coords.latitude;
+     let userLng = position.coords.longitude;
+     let timeStamp = position.timestamp;
+     userLoc = new google.maps.LatLng(userLat, userLng);
+     //console.log(position);
+     //console.log(longitude);
+     //console.log(startTime);
+
+     let userLocRef = userLocs.push();
+     userLocRef.set({
+        lat: userLat,
+        lng: userLng,
+        timestamp: timeStamp,
       });
 
-      let markers = [];
-      let infoWindow;
+      //markers[0].setMap(null);
+      //markers.length = 0;
+      //addDrivers();
+
+   }
+
+
+   function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+         streetViewControl: false,
+         fullscreenControl: false,
+         mapTypeControl: false,
+         center: {lat: userLat, lng: userLng },
+         zoom: 13,
+      });
+      //addDrivers2();
+
+   }
+
+
+   function loadDrivers() {
+      drivers.on('child_added',
+         function(snapshot) {
+            // Get that click from firebase.
+            let driverRec = snapshot.val();
+            console.log(driverRec);
+            let driverLoc = new google.maps.LatLng(driverRec.lat, driverRec.lng);
+            let atTime = new Date(driverRec.timestamp);
+            console.log(atTime);
+
+            const iconBase = "https://hughscar.com/images/";
+            const icons = {
+              size_16: {
+                icon: iconBase + "icons8-car-16.png",
+              },
+              size_24: {
+                icon: iconBase + "icons8-car-24.png",
+              },
+              size_30: {
+                icon: iconBase + "icons8-car-30.png",
+              },
+              size_40: {
+                icon: iconBase + "icons8-car-40.png",
+              },
+              size_48: {
+                icon: iconBase + "icons8-car-48.png",
+              },
+              size_80: {
+                icon: iconBase + "icons8-car-80.png",
+              },
+              size_96: {
+                icon: iconBase + "icons8-car-96.png",
+              },
+            };
+
+
+            let timeString = atTime.toLocaleString();
+            const marker = new google.maps.Marker({
+               icon: icons["size_24"].icon,
+               animation: google.maps.Animation.DROP,
+               position: driverLoc,
+               map: map,
+               //label: timeString,
+            });
+            markers.push(marker);
+         });
+
+      drivers.on('child_changed',
+         function(snapshot) {
+            // Get that click from firebase.
+            let driverRec = snapshot.val();
+            console.log(driverRec);
+         });
+
+      }
 
 
 
-      let userLoc = new google.maps.LatLng(userLat, userLng);
-
-      //addMarker(myLoc, "Me");
+   function addDrivers2() {
+      drivers.on('child_added',
+         function(snapshot) {
+            // Get that click from firebase.
+            let driverRec = snapshot.val();
+            console.log(driverRec);
+            let driverLoc = new google.maps.LatLng(driverRec.lat, driverRec.lng);
+            let elapsedMs = Date.now() - driverRec.timestamp;
+            let departTime = new Date(Date.now() + 600 * 1000);
+            //console.log(point);
+            //addMarker(myLoc, "Me");
       // Adds a marker to the map and push to the array.
       //function addMarker(location, label) {
-      //  const marker = new google.maps.Marker({
-      //      position: location,
-      //    map: map,
-      //    label: label,
-      //  });
-      //markers.push(marker);
-      //}
+        const marker = new google.maps.Marker({
+            position: driverLoc,
+            map: map,
+            //label: label,
+          });
+          markers.push(marker);
 
+        });
+      }
+
+function addDrivers() {
       drivers.on('child_added',
          function(snapshot) {
             // Get that click from firebase.
@@ -192,9 +281,12 @@
            } else {message.innerHTML = "<p>Your current location is outside service area</p>";}
         });
       });
-   }
+
+
+
+
 }
-         
+
 </script>
 
 </body>
