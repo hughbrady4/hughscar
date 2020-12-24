@@ -85,17 +85,24 @@ function addUserMarker() {
 
    let zoom = map.getZoom();
 
+   console.log(map.getZoom());
    if (userMarkers.length > 0) {
       let lastPosition = userMarkers[userMarkers.length-1].getPosition();
       newLat = lastPosition.lat();
-      if (zoom <7) {
+      if (zoom < 3) {
+        newLng = lastPosition.lng() + 50;
+      } else if (zoom < 6) {
+        newLng = lastPosition.lng() + 5;
+      } else if (zoom < 9) {
         newLng = lastPosition.lng() + 0.5;
-
-      } else {
+      } else if (zoom < 12) {
+        newLng = lastPosition.lng() + 0.05;
+      } else if (zoom < 18){
         newLng = lastPosition.lng() + 0.005;
+      } else {
+        newLng = lastPosition.lng() + 0.00005;
 
       }
-
    }
 
    //console.log(labelIndex);
@@ -113,7 +120,7 @@ function addUserMarker() {
 
    marker.addListener("click", function(e) {
      //removeMarker(userMarkers.length-1);
-     console.log(e);
+     //console.log(e);
      //userMarkers[userMarkers.length-1].setMap(null);
 
    });
@@ -175,11 +182,6 @@ function showRoute() {
 
    }
 
-   for (let i =  0; i <userMarkers.length; i++) {
-     userMarkers[i].setMap(null);
-   }
-
-
    var request = {
       origin: origin,
       destination: destination,
@@ -193,10 +195,16 @@ function showRoute() {
       if (status == 'OK') {
          lastZoom = map.getZoom();
 
+         for (let i =  0; i <userMarkers.length; i++) {
+           userMarkers[i].setMap(null);
+         }
+
+
+
          directionsRenderer.setMap(map);
          directionsRenderer.setDirections(result);
 
-         console.log(result);
+         //console.log(result);
          let userRouteRef = firebase.database().ref("user-routes").push();
          //userRouteRef.set(result);
 
@@ -220,6 +228,8 @@ function showRoute() {
              clearRoute();
          });
          map.controls[google.maps.ControlPosition.TOP_LEFT].push(clearButton);
+      } else {
+        errorMessage(status);
       }
    });
 }
@@ -288,6 +298,7 @@ function initMap() {
       streetViewControl: false,
       fullscreenControl: false,
       mapTypeControl: false,
+      gestureHandling: "cooperative",
       center: {lat: userLat, lng: userLng },
       zoom: 6,
    });
@@ -302,7 +313,7 @@ function initMap() {
    const mapHeader = document.createElement("div");
    mapHeader.classList.add("header_container");
    mapHeader.innerHTML = "Traveling Salesman";
-   map.controls[google.maps.ControlPosition.TOP_CENTER].push(mapHeader);
+   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(mapHeader);
 
    const locationButton = document.createElement("button");
    locationButton.textContent = "Add Marker";
@@ -401,5 +412,16 @@ function calcDistance() {
          }
       }
    });
+}
 
+function errorMessage(message) {
+  // Get the snackbar DIV
+  let sb = document.getElementById("snackbar");
+  sb.innerHTML = message;
+  console.log("Route response status: " + message);
+  // Add the "show" class to DIV
+  sb.className = "show";
+
+  // After 3 seconds, remove the show class from DIV
+  setTimeout(function(){ sb.className = sb.className.replace("show", ""); }, 3000);
 }
