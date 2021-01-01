@@ -10,192 +10,27 @@
 <script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-analytics.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-database.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-auth.js"></script>
-
-<script
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9Gmjr0VbitRRSKgiGVG4xFc8Rgk7gK1Y&callback=initMap&libraries=&v=weekly"
-  defer
-></script>
+<script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
+<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
 </head>
 
 <body>
 
-<div id="transportservice-header-container" style="margin: 7% 25% 7% 25%">
-<div class="center">
+<div id="transportservice-header-container" class="header_container">
 
 <h1>Hugh's Car Service</h1>
 <h2>Irving, Texas</h2>
 <h2>DFW and Love Field Airport Shuttle Service</h2>
 
-<a class="button" href="tel:+1-214-433-3268">Call Now</a>
-
-<div id="message"></div>
+<a class="request_button" href="request_ride.html">Request a Ride</a>
+<div id="firebaseui-auth-container"></div>
 
 </div>
-</div>
 
-<div id="map"></div>
+<div id="snackbar"></div>
 
-<script>
-
-   // Your web app's Firebase configuration
-   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-   var firebaseConfig = {
-    apiKey: "AIzaSyCj2ojD-AObyfiP-aTl6eRMnZNt2TrX__w",
-    authDomain: "hughscar-6ac7d.firebaseapp.com",
-    databaseURL: "https://hughscar-6ac7d-default-rtdb.firebaseio.com",
-    projectId: "hughscar-6ac7d",
-    storageBucket: "hughscar-6ac7d.appspot.com",
-    messagingSenderId: "597937667152",
-    appId: "1:597937667152:web:8e3b6b57ffd011e5036555",
-    measurementId: "G-9MPTSJEV3K"
-   };
-
-   // Initialize Firebase
-   firebase.initializeApp(firebaseConfig);
-   firebase.analytics();
-   //console.log(firebase);
-
-   var data = {lat: null, lng: null, name: null, timestamp: null};
-   var startTime = new Date().getTime();
-   var drivers = firebase.database().ref("driver-cur-loc");
-   var userLocs = firebase.database().ref("user-locs");
-   var userLat = 32.89232732227711;
-   var userLng = -96.95597853022022;
-
-   //console.log(navigator.geolocation);
-   function initMap() {
-
-     let map;
-
-     map = new google.maps.Map(document.getElementById("map"), {
-        center: {lat: userLat, lng: userLng },
-        zoom: 10,
-     });
-
-   initLocation();
-
-   function initLocation() {
-      if (navigator.geolocation) {
-         navigator.geolocation.getCurrentPosition(showPosition, noPosition);
-      } else {
-         message.innerHTML = "<p>Geolocation is not supported by this browser</p>";
-         console.log("Failed to get geolocation from browser");
-      }
-
-      function noPosition(position) {
-         message.innerHTML = "<p>Geolocation is not supported by this browser</p>";
-         console.log("Failed to get geolocation from browser");
-      }
-   }
-
-   function showPosition(position) {
-      userLat = position.coords.latitude;
-      userLng = position.coords.longitude;
-      timeStamp = position.timestamp;
-
-      //console.log(position);
-      //console.log(longitude);
-      //console.log(startTime);
-
-      firebase.database().ref('user-locs/' + timeStamp).set({
-         lat: userLat,
-         lng: userLng,
-      });
-
-      let markers = [];
-      let infoWindow;
-
-
-
-      let userLoc = new google.maps.LatLng(userLat, userLng);
-
-      //addMarker(myLoc, "Me");
-      // Adds a marker to the map and push to the array.
-      //function addMarker(location, label) {
-      //  const marker = new google.maps.Marker({
-      //      position: location,
-      //    map: map,
-      //    label: label,
-      //  });
-      //markers.push(marker);
-      //}
-
-      drivers.on('child_added',
-         function(snapshot) {
-            // Get that click from firebase.
-            let driverRec = snapshot.val();
-            console.log(driverRec);
-            let driverLoc = new google.maps.LatLng(driverRec.lat, driverRec.lng);
-            let elapsedMs = Date.now() - driverRec.timestamp;
-            let departTime = new Date(Date.now() + 600 * 1000);
-            //console.log(point);
-
-            var request = {
-               origin: driverLoc,
-               destination: userLoc,
-               travelMode: 'DRIVING',
-               drivingOptions: { departureTime: departTime, trafficModel: "pessimistic"},
-             };
-
-            var directionsService = new google.maps.DirectionsService();
-            var directionsRenderer = new google.maps.DirectionsRenderer();
-
-            directionsService.route(request, function(result, status) {
-               console.log(status);
-               if (status == 'OK') {
-                  directionsRenderer.setDirections(result);
-                  directionsRenderer.setMap(map);
-
-                  var service = new google.maps.DistanceMatrixService();
-                  service.getDistanceMatrix({
-                     origins: [driverLoc],
-                     destinations: [userLoc],
-                     travelMode: 'DRIVING',
-                  }, distCallback);
-
-                  function distCallback (response, status) {
-                     console.log(response);
-
-                  if (status == 'OK') {
-                     var origins = response.originAddresses;
-                     var destinations = response.destinationAddresses;
-
-                     for (var i = 0; i < origins.length; i++) {
-                        var results = response.rows[i].elements;
-                        for (var j = 0; j < results.length; j++) {
-                           var element = results[j];
-                           var distance = element.distance.text;
-                           var duration = element.duration.text;
-                           var value = element.duration.value;
-                           var from = origins[i];
-                           var to = destinations[j];
-                           //console.log(element);
-                           //console.log(distance);
-                           //console.log(value);
-                           //console.log(from);
-                           //console.log(to);
-                        }
-                     }
-
-                     if (value < 14400) {
-                        message.innerHTML = "<p>" + to + "</p>" +
-                                  "<p>Time to pickup: " + duration + "</p>" +
-                                   "<p>Distance: " + distance + "</p>";
-
-                        infoWindow = new google.maps.InfoWindow();
-                        infoWindow.setPosition(driverLoc);
-                        infoWindow.setContent("Hello, I am " + distance + ", " + duration + " away.");
-                        infoWindow.open(map);
-                    } else {message.innerHTML = "<p>Your current location is outside service area</p>";}
-                 } else {message.innerHTML = "<p>Your current location is outside service area</p>"}
-              }
-           } else {message.innerHTML = "<p>Your current location is outside service area</p>";}
-        });
-      });
-   }
-}
-         
-</script>
+<script src="app.js"></script>
+<script>initAuth();</script>
 
 </body>
 </html>
