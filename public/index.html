@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="ISO-8859-1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hugh's Car Service</title>
+<link rel="stylesheet" href="css/index.css">
+<meta name="description" content="Ride Scheduling App">
+<meta name="keywords" content="Taxi, Ride Service, Transportation, Pueblo, Colorado, COS Airport, Fort Carson">
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!-- Popper JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-analytics.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-messaging.js"></script>
+<script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
+<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<!-- <script async src="https://www.googletagmanager.com/gtag/js?id=UA-43858518-6">
+</script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-43858518-6');
+</script> -->
+
+</head>
+
+<body>
+
+<!-- <div id="firebaseui-auth-container"></div> -->
+<!-- <input type="text" id="address1" name="address"> -->
+<div id="transportservice-header-container" class="container">
+
+<div class="row">
+
+<div class="col-lg-1" style="padding:3px 3px 3px 3px;">
+
+<!-- <div id="osweb-profile-container" class="container" style="margin:auto;"> -->
+
+       <!-- <div id="profile-card" class="card">
+       <img src="images/blank-profile-picture-973460_640.png" alt="Profile Pic"  id="profile-picture">
+       <div class="card-body" style="font-size:11px;">
+       <h5 id="profile-name" class="card-title">John Doe</h5>
+       <p id="profile-email" class="card-text">Some example text.</p>
+       <a id="link-signOut" href="#" class="btn btn-primary">Signout</a>
+       </div>
+       </div> -->
+       <!-- <div id="firebaseui-auth-container"></div> -->
+
+       <a id="link-signOut" href="#" class="btn btn-primary">Signout</a>
+
+
+
+<!-- </div> -->
+
+</div>
+
+<div class="col-lg-11" style="padding:3px 3px 3px 3px;">
+
+<h3>Hugh's Car Service</h3>
+<h5>Pueblo, CO</h5>
+
+
+</div>
+
+</div>
+
+</div>
+
+<div id="transportservice-content-container" class="container">
+
+<div id="firebaseui-auth-container">
+<!-- <h5 id="signin-heading">Please sign in to request a ride</h3> -->
+</div>
+
+
+<div class="form-row">
+<div class="col-sm-12 form-group">
+<!-- <label for="pickup">Pickup Address</label> -->
+<input type="text" class="form-control" id="pickup" placeholder="Pickup" name="pickup">
+</div>
+</div>
+
+
+
+<div id="map" class="map_full"></div>
+
+
+
+
+
+<!-- <div id="appointments-container" class="container">
+
+
+ <script src='https://square.site/appointments/buyer/widget/uvkygg1gh1fcrb/L0ED4Q6XN3ZP1.js'></script>
+
+</div> -->
+
+<!-- <div class="footer">
+  <a href="mailto:support@hughscar.com?subject=Hughs Car Support">Email Support</a>
+</div> -->
+
+
+
+<div id="snackbar"></div>
+
+</div>
+
+<script src="index.js"></script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9Gmjr0VbitRRSKgiGVG4xFc8Rgk7gK1Y&callback=initApp&libraries=&v=weekly"></script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="ISO-8859-1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Ride Scheduling App">
+<meta name="keywords" content="Taxi, Ride Service, Transportation, Colorado Springs, COS Airport, Fort Carson">
+
+<title>Hugh's Car Service</title>
+<link rel="stylesheet" href="css/ride_request.css">
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!-- Popper JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-analytics.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-messaging.js"></script>
+<script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
+<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
+
+<!-- <script type="text/javascript" src="https://js.squareup.com/v2/paymentform"></script> -->
+
+<script src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
+
+<!-- link to the local custom styles for SqPaymentForm -->
+<!-- <link rel="stylesheet" type="text/css" href="css/mysqpaymentform.css"> -->
+
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+</head>
+
+<body>
+
+<!-- <div id="firebaseui-auth-container"></div> -->
+<!-- <input type="text" id="address1" name="address"> -->
+
+<div id="loader"></div>
+<div id="firebaseui-auth-container">
+<h3 id="signin-heading">Please sign in to request a ride</h3>
+</div>
+
+<div id="main_content" class="container">
+<!-- <div class="row"> -->
+
+<div id="info_panel" class="container-fluid">
+
+<div class="row">
+<div class="col-sm-6">
+<h6 style="margin-top:1%">Request Details</h6>
+</div>
+<div class="col-sm-6">
+<h6 id="status" style="float: right; margin-top:1%">Status</h6>
+</div>
+</div>
+
+<form style="margin-top:1%">
+
+<div class="form-row">
+<div class="col-sm-6 form-group">
+<label for="date">Pickup Date</label>
+<input type="date" class="form-control" id="date" name="date"/>
+</div>
+<div class="col-sm-6 form-group">
+<label for="time">Pickup Time</label>
+<input type="time" class="form-control" id="time" name="time"/>
+</div>
+</div>
+
+<div class="form-row">
+<div class="col-sm-12 form-group">
+<label for="pickup">Pickup Address</label>
+<input type="text" class="form-control" id="pickup" placeholder="Pickup" name="pickup">
+</div>
+<!-- <div class="col-sm-1 form-group">
+<label for="pickup_btn">Locate</label>
+<button id="pickup_btn" type="button" class="btn"><i class="material-icons">my_location</i></button>
+</div> -->
+</div>
+
+<div class="form-row">
+<div class="col-sm-12 form-group">
+<label for="destination">Destination Address</label>
+<input type="text" class="form-control" id="destination" placeholder="Destination" name="destination">
+</div>
+<!-- <div class="col-sm-1 form-group">
+<label for="dest_btn">Locate</label>
+<button id="dest_btn" type="button" class="btn"><i class="material-icons">my_location</i></button>
+</div> -->
+</div>
+
+
+<div class="form-row">
+<div class="col-sm-4 form-group">
+<label for="distance">Distance</label>
+<input type="text" class="form-control" id="distance" placeholder="Distance" name="distance" readOnly="true">
+</div>
+
+<div class="col-sm-4 form-group">
+<label for="duration">Duration</label>
+<input type="text" class="form-control" id="duration" placeholder="Duration" name="duration" readOnly="true">
+</div>
+
+<div class="col-sm-4 form-group">
+<label for="fare">Fare</label>
+<input type="text" class="form-control" id="fare" placeholder="Fare" name="fare" readOnly="true">
+</div>
+
+</div>
+
+<!-- <div class="form-row">
+  <div class="col-sm-6">
+  <div id="card-container"></div>
+  </div>
+
+  <div class="col-sm-6">
+  <button id="card-button" type="button">Pay</button>
+  </div>
+
+
+</div> -->
+
+</form>
+
+</div>
+
+<div id="map" class="map_full"></div>
+
+</div>
+
+<div id="snackbar"></div>
+
+<script src="request_ride.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9Gmjr0VbitRRSKgiGVG4xFc8Rgk7gK1Y&callback=initApp&libraries=&v=weekly"></script>
+
+
+</body>
+</html>

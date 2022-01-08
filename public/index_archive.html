@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="ISO-8859-1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hugh's Car Service</title>
+<link rel="stylesheet" href="css/index.css">
+
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!-- Popper JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+
+<script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-analytics.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
+<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
+</head>
+
+<body>
+<div class="row">
+<div id="transportservice-header-container" class="container">
+
+<h2>Hugh's Car Service</h2>
+<h4>Colorado Springs, CO</h4>
+</div>
+
+
+</div>
+<div class="row">
+<div id="user-profile-container" class="text-center col">
+<div class="card" style="width:70%; margin:auto">
+  <img class="card-img-top" src="/images/me.jpg" alt="Card image">
+  <div class="card-body">
+    <h4 class="card-title">John Doe</h4>
+    <p class="card-text">Some example text.</p>
+    <a href="#" class="btn btn-primary">See Profile</a>
+  </div>
+</div>
+</div>
+<div id="main-controls-container" class="text-center col">
+  <div id="main-btn-grp" class="btn-group-vertical">
+  <button id="btn-driver-maintenance" type="button" class="btn btn-primary" onclick="driverMaintenance()">Add Driver</a>
+  <button id="btn-request-maintenance" type="button" class="btn btn-primary" onclick="requestMaintenance()">Requests</a>
+  <button id="btn-driver-app" type="button" class="btn btn-primary" onclick="requestDrive()">Driver App</a>
+  <button type="button" class="btn btn-primary" onclick="requestRide()">Request a Ride</a>
+  <button type="button" class="btn btn-primary" onclick="signOut()">Sign out</button>
+  </div>
+  <div id="firebaseui-auth-container" />
+</div>
+</row>
+
+<div class="row">
+<div class="footer">
+  <a href="mailto:support@hughscar.com?subject=Hughs Car Support">Email Support</a>
+</div>
+</div>
+
+
+<div id="snackbar"></div>
+
+<script src="index.js"></script>
+<script>initAuth();</script>
+
+</body>
+</html>

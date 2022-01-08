@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="ISO-8859-1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Driver App">
+<title>Hugh's Car Service</title>
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-analytics.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-messaging.js"></script>
+<script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
+<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
+</head>
+
+<body>
+
+<!-- <div id="firebaseui-auth-container"></div> -->
+<!-- <input type="text" id="address1" name="address"> -->
+<div id="loader"></div>
+<div id="firebaseui-auth-container">
+<h3 id="signin-heading">Please sign in to request a ride</h3>
+</div>
+<div id="map" class="map_full"></div>
+
+
+<div id="snackbar"></div>
+
+<script src="driver.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9Gmjr0VbitRRSKgiGVG4xFc8Rgk7gK1Y&callback=initApp&libraries=&v=weekly"></script>
+
+
+</body>
+</html>

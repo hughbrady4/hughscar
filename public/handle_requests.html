@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hugh's Car Service</title>
+<link rel="stylesheet" href="css/styles1.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-analytics.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
+<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
+</head>
+
+<body>
+
+<div id="transportservice-header-container" class="header_container">
+
+<h3>Hugh's Car Service</h3>
+
+</div>
+
+<!-- <a class="request_button" href="request_ride.html">Request a Ride</a> -->
+<div id="firebaseui-auth-container"></div>
+
+<!--  -->
+
+<div id="driver-edit-container" class="container">
+
+<form class="form-inline" action="javascript:;" onsubmit="createDriver()">
+<div class="form-group">
+  <label for="driver-name">Name</label>
+  <input type="text" class="form-control" id="driver-name">
+</div>
+<div class="form-group">
+  <label for="driver-uid">UID</label>
+  <input type="text" class="form-control" id="driver-uid">
+</div>
+<div class="checkbox">
+  <label><input type="checkbox"> Online</label>
+</div>
+  <button type="submit" class="btn btn-default">Add</button>
+</form>
+
+</div>
+
+<div id="user-list-container" class="container">
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>UID</th>
+      </tr>
+    </thead>
+    <tbody id="user-list-table">
+      <tr>
+        <td>John</td>
+        <td>john@example.com</td>
+          <td>1234567890</td>
+      </tr>
+      <tr>
+        <td>Mary</td>
+        <td>mary@example.com</td>
+      </tr>
+      <tr>
+        <td>July</td>
+        <td>july@example.com</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+<div id="snackbar"></div>
+
+<script src="driver_maintenance.js"></script>
+<script>initAuth();</script>
+
+</body>
+</html>

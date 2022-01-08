@@ -1,0 +1,173 @@
+
+
+#transportservice-header-container {
+  border-radius: 5px;
+  border: 1px solid #73AD21;
+  width: 97%;
+  margin: 1% auto auto auto;
+  /* margin-top: 3%;
+  text-align: center;
+  background-color: #fff; */
+
+}
+
+#transportservice-content-container {
+  border-radius: 5px;
+  border: 1px solid #73AD21;
+  width: 97%;
+  margin: 1% auto auto auto;
+  /* margin-top: 3%;
+  text-align: center;
+  background-color: #fff; */
+
+}
+
+
+#firebaseui-auth-container {
+  /* text-align: center; */
+  /* background-color: #fff; */
+  visibility: hidden;
+
+}
+
+#firebaseui-auth-container.show {
+  visibility: visible;
+}
+
+#logout-button {
+  /* text-align: center; */
+  /* background-color: #fff; */
+  visibility: hidden;
+
+
+
+}
+
+#logout-button.show {
+  visibility: visible;
+}
+
+#main-controls-container {
+  margin-top: 3%;
+  text-align: center;
+  margin-bottom: 3%;
+
+}
+
+#user-profile-container {
+  /* margin-top: 3%;
+  text-align: center;
+  margin-bottom: 3%; */
+
+}
+
+
+#main-btn-grp {
+  /* text-align: center; */
+  /* background-color: #fff; */
+  visibility: hidden;
+
+  height: 0px;
+
+}
+
+#main-btn-grp.show {
+  /* text-align: center; */
+  /* background-color: #fff; */
+  visibility: visible;
+  height: auto;
+
+
+
+}
+
+
+#loader {
+  visibility: hidden;
+  border: 8px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 8px solid #3498db;
+  width: 120px;
+  height: 120px;
+  -webkit-animation: spin 2s linear infinite; /* Safari */
+  animation: spin 2s linear infinite;
+  z-index: 5;
+  position: fixed;
+  /* margin: auto; */
+  min-width: 120px; /* Set a default minimum width */
+  margin-left: -68px; /* Divide value of min-width by 2 */
+  left: 50%;
+  min-height: 120px;
+  margin-top: -68px;
+  top: 50%;
+}
+
+#loader.show {
+  visibility: visible;
+}
+
+/* The snackbar - position it at the bottom and in the middle of the screen */
+#snackbar {
+ visibility: hidden; /* Hidden by default. Visible on click */
+ min-width: 250px; /* Set a default minimum width */
+ margin-left: -125px; /* Divide value of min-width by 2 */
+ background-color: #333; /* Black background color */
+ color: #fff; /* White text color */
+ text-align: center; /* Centered text */
+ border-radius: 2px; /* Rounded borders */
+ padding: 16px; /* Padding */
+ position: fixed; /* Sit on top of the screen */
+ z-index: 5; /* Add a z-index if needed */
+ left: 50%; /* Center the snackbar */
+ bottom: 30px; /* 30px from the bottom */
+}
+
+/* Show the snackbar when clicking on a button (class added with JavaScript) */
+#snackbar.show {
+ visibility: visible; /* Show the snackbar */
+ /* Add animation: Take 0.5 seconds to fade in and out the snackbar.
+ However, delay the fade out process for 2.5 seconds */
+ -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+ animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+/* Animations to fade the snackbar in and out */
+@-webkit-keyframes fadein {
+ from {bottom: 0; opacity: 0;}
+ to {bottom: 30px; opacity: 1;}
+}
+
+@keyframes fadein {
+ from {bottom: 0; opacity: 0;}
+ to {bottom: 30px; opacity: 1;}
+}
+
+@-webkit-keyframes fadeout {
+ from {bottom: 30px; opacity: 1;}
+ to {bottom: 0; opacity: 0;}
+}
+
+@keyframes fadeout {
+ from {bottom: 30px; opacity: 1;}
+ to {bottom: 0; opacity: 0;}
+}
+
+.map_full {
+  height: 500px;
+  width: 100%;
+  border-radius: 5px;
+  /* margin: 1% auto auto auto; */
+}
+
+
+.footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: #333; /* Black background color */
+  color: #fff; /* White text color */
+  /* background-color: red;
+  color: white; */
+  text-align: center;
+}

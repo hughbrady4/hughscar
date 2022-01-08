@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Hugh's Car Service</title>
+<link rel="stylesheet" href="css/styles.css">
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-analytics.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-auth.js"></script>
+
+<script
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9Gmjr0VbitRRSKgiGVG4xFc8Rgk7gK1Y&callback=initMap&libraries=&v=weekly"
+  defer
+></script>
+</head>
+
+<body>
+
+<div id="transportservice-header-container" style="margin: 1% 3% 1% 3%">
+<div class="center">
+
+<h1>Hugh's Car Service</h1>
+<!-- <h2>Irving, Texas</h2>
+<h2>DFW and Love Field Airport Shuttle Service</h2> -->
+
+<div id="message"></div>
+
+</div>
+</div>
+
+<div id="map"></div>
+
+<script>
+
+   // Your web app's Firebase configuration
+   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+   var firebaseConfig = {
+    apiKey: "AIzaSyCj2ojD-AObyfiP-aTl6eRMnZNt2TrX__w",
+    authDomain: "hughscar-6ac7d.firebaseapp.com",
+    databaseURL: "https://hughscar-6ac7d-default-rtdb.firebaseio.com",
+    projectId: "hughscar-6ac7d",
+    storageBucket: "hughscar-6ac7d.appspot.com",
+    messagingSenderId: "597937667152",
+    appId: "1:597937667152:web:8e3b6b57ffd011e5036555",
+    measurementId: "G-9MPTSJEV3K"
+   };
+
+   // Initialize Firebase
+   firebase.initializeApp(firebaseConfig);
+   //firebase.analytics();
+   //console.log(firebase);
+
+   var data = {lat: null, lng: null, name: null, timestamp: null};
+   var startTime = new Date().getTime();
+   var drivers = firebase.database().ref("driver-cur-loc");
+   var userLocs = firebase.database().ref("user-locs");
+   var userLat = 32.89232732227711;
+   var map;
+   var userLoc;
+   var userLng = -96.95597853022022;
+   let driverMarkers = [];
+   let userMarkers = [];
+   let infoWindow;
+
+   const labels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+   let labelIndex = 0;
+
+   var directionsService;
+   var directionsRenderer;
+
+
+   //var timeLink = document.getElementById("btn_pick_time");
+   //timeLink.addEventListener("click", initLocation);
+
+   loadDrivers();
+
+
+   function initLocation() {
+
+      if (navigator.geolocation) {
+         navigator.geolocation.getCurrentPosition(setPosition, noPosition);
+      } else {
+         message.innerHTML = "<p>Geolocation is not supported by this browser</p>";
+         console.log("Failed to get geolocation from browser");
+      }
+   }
+
+
+   function noPosition(position) {
+      message.innerHTML = "<p>Geolocation is not supported by this browser</p>";
+      console.log("Failed to get geolocation from browser");
+   }
+
+   function setPosition(position) {
+     let userLat = position.coords.latitude;
+     let userLng = position.coords.longitude;
+     let timeStamp = position.timestamp;
+     userLoc = new google.maps.LatLng(userLat, userLng);
+     //console.log(position);
+     //console.log(longitude);
+     //console.log(startTime);
+
+     let userLocRef = userLocs.push();
+     userLocRef.set({
+        lat: userLat,
+        lng: userLng,
+        timestamp: timeStamp,
+      });
+
+
+      const marker = new google.maps.Marker({
+         label: labels[labelIndex++ % labels.length],
+         animation: google.maps.Animation.DROP,
+         draggable: true,
+         position: userLoc,
+         map: map,
+      });
+
+      userMarkers.push(marker);
+      //markers[0].setMap(null);
+      //markers.length = 0;
+      //addDrivers();
+
+   }
+
+   function showRoute() {
+
+
+      for (var i = 0; i < userMarkers.length-1; i++) {
+        console.log(userMarkers[i]);
+        let departTime = new Date(Date.now() + 600 * 1000);
+        console.log("here" + i);
+
+        let origin = userMarkers[i].getPosition();
+
+        let j = i + 1;
+        let destination = userMarkers[j].getPosition();
+
+
+        var request = {
+           origin: origin,
+           destination: destination,
+           travelMode: 'DRIVING',
+           drivingOptions: { departureTime: departTime, trafficModel: "pessimistic"},
+         };
+
+
+
+        directionsService.route(request, function(result, status) {
+           console.log(status);
+           if (status == 'OK') {
+              directionsRenderer.setDirections(result);
+              directionsRenderer.setMap(map);
+            }
+          });
+        }
+
+   }
+
+
+   function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+         streetViewControl: false,
+         fullscreenControl: false,
+         mapTypeControl: false,
+         center: {lat: userLat, lng: userLng },
+         zoom: 13,
+      });
+
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer();
+      directionsRenderer.setMap(map);
+
+      infoWindow = new google.maps.InfoWindow();
+      const locationButton = document.createElement("button");
+      locationButton.className = "button"
+      locationButton.textContent = "Drop Marker";
+      locationButton.classList.add("custom-map-control-button");
+      map.controls[google.maps.ControlPosition.TOP_LEFT].push(locationButton);
+      locationButton.addEventListener("click", () => {
+          initLocation();
+      });
+
+      // const callButton = document.createElement("button");
+      // callButton.className = "button"
+      // callButton.textContent = "Call Now";
+      // callButton.classList.add("custom-map-control-button");
+      // map.controls[google.maps.ControlPosition.TOP_LEFT].push(callButton);
+      // callButton.addEventListener("click", () => {
+      //    window.open("tel:+12144333268");
+      // });
+
+      const routeButton = document.createElement("button");
+      routeButton.className = "button"
+      routeButton.textContent = "Show Route";
+      routeButton.classList.add("custom-map-control-button");
+      map.controls[google.maps.ControlPosition.TOP_LEFT].push(routeButton);
+      routeButton.addEventListener("click", () => {
+         showRoute();
+      });
+
+   }
+
+
+   function loadDrivers() {
+      drivers.on('child_added',
+         function(snapshot) {
+            // Get that click from firebase.
+            let driverRec = snapshot.val();
+            console.log(driverRec);
+            let driverLoc = new google.maps.LatLng(driverRec.lat, driverRec.lng);
+            let atTime = new Date(driverRec.timestamp);
+            console.log(atTime);
+
+            const iconBase = "https://hughscar.com/images/";
+            const icons = {
+              size_16: {
+                icon: iconBase + "icons8-car-16.png",
+              },
+              size_24: {
+                icon: iconBase + "icons8-car-24.png",
+              },
+              size_30: {
+                icon: iconBase + "icons8-car-30.png",
+              },
+              size_40: {
+                icon: iconBase + "icons8-car-40.png",
+              },
+              size_48: {
+                icon: iconBase + "icons8-car-48.png",
+              },
+              size_80: {
+                icon: iconBase + "icons8-car-80.png",
+              },
+              size_96: {
+                icon: iconBase + "icons8-car-96.png",
+              },
+            };
+
+
+            let timeString = atTime.toLocaleString();
+            const marker = new google.maps.Marker({
+               icon: icons["size_24"].icon,
+               animation: google.maps.Animation.DROP,
+               position: driverLoc,
+               map: map,
+               //label: timeString,
+            });
+            driverMarkers.push(marker);
+         });
+
+      drivers.on('child_changed',
+         function(snapshot) {
+            // Get that click from firebase.
+            let driverRec = snapshot.val();
+            console.log(driverRec);
+         });
+
+      }
+
+
+
+   function addDrivers2() {
+      drivers.on('child_added',
+         function(snapshot) {
+            // Get that click from firebase.
+            let driverRec = snapshot.val();
+            console.log(driverRec);
+            let driverLoc = new google.maps.LatLng(driverRec.lat, driverRec.lng);
+            let elapsedMs = Date.now() - driverRec.timestamp;
+            let departTime = new Date(Date.now() + 600 * 1000);
+            //console.log(point);
+            //addMarker(myLoc, "Me");
+      // Adds a marker to the map and push to the array.
+      //function addMarker(location, label) {
+        const marker = new google.maps.Marker({
+            position: driverLoc,
+            map: map,
+            //label: label,
+          });
+          markers.push(marker);
+
+        });
+      }
+
+function addDrivers() {
+      drivers.on('child_added',
+         function(snapshot) {
+            // Get that click from firebase.
+            let driverRec = snapshot.val();
+            console.log(driverRec);
+            let driverLoc = new google.maps.LatLng(driverRec.lat, driverRec.lng);
+            let elapsedMs = Date.now() - driverRec.timestamp;
+            let departTime = new Date(Date.now() + 600 * 1000);
+            //console.log(point);
+
+            var request = {
+               origin: driverLoc,
+               destination: userLoc,
+               travelMode: 'DRIVING',
+               drivingOptions: { departureTime: departTime, trafficModel: "pessimistic"},
+             };
+
+            var directionsService = new google.maps.DirectionsService();
+            var directionsRenderer = new google.maps.DirectionsRenderer();
+
+            directionsService.route(request, function(result, status) {
+               console.log(status);
+               if (status == 'OK') {
+                  directionsRenderer.setDirections(result);
+                  directionsRenderer.setMap(map);
+
+                  var service = new google.maps.DistanceMatrixService();
+                  service.getDistanceMatrix({
+                     origins: [driverLoc],
+                     destinations: [userLoc],
+                     travelMode: 'DRIVING',
+                  }, distCallback);
+
+                  function distCallback (response, status) {
+                     console.log(response);
+
+                  if (status == 'OK') {
+                     var origins = response.originAddresses;
+                     var destinations = response.destinationAddresses;
+
+                     for (var i = 0; i < origins.length; i++) {
+                        var results = response.rows[i].elements;
+                        for (var j = 0; j < results.length; j++) {
+                           var element = results[j];
+                           var distance = element.distance.text;
+                           var duration = element.duration.text;
+                           var value = element.duration.value;
+                           var from = origins[i];
+                           var to = destinations[j];
+                           //console.log(element);
+                           //console.log(distance);
+                           //console.log(value);
+                           //console.log(from);
+                           //console.log(to);
+                        }
+                     }
+
+                     if (value < 14400) {
+                        message.innerHTML = "<p>" + to + "</p>" +
+                                  "<p>Time to pickup: " + duration + "</p>" +
+                                   "<p>Distance: " + distance + "</p>";
+
+                        infoWindow = new google.maps.InfoWindow();
+                        infoWindow.setPosition(driverLoc);
+                        infoWindow.setContent("Hello, I am " + distance + ", " + duration + " away.");
+                        infoWindow.open(map);
+                    } else {message.innerHTML = "<p>Your current location is outside service area</p>";}
+                 } else {message.innerHTML = "<p>Your current location is outside service area</p>"}
+              }
+           } else {message.innerHTML = "<p>Your current location is outside service area</p>";}
+        });
+      });
+
+
+
+
+}
+
+</script>
+
+</body>
+</html>
