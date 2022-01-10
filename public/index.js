@@ -119,7 +119,21 @@ function getRideControl() {
 }
 
 
+function getDrivers() {
 
+   let driversRecord = firebase.database().ref("/drivers");
+   console.log(mUser.uid);
+   console.log(driversRecord);
+
+   driversRecord.on('value', (snapshot) => {
+      if (snapshot.exists()) {
+         console.log(snapshot.val());
+
+
+      }
+   });
+
+}
 
 
 function requestLocation() {
@@ -290,6 +304,8 @@ function initAuth() {
          // $("#profile-card").show();
 
          getRideControl();
+         getDrivers();
+
       } else {
          document.getElementById('firebaseui-auth-container').classList.add("show");
          userMessage("You are logged out.");
