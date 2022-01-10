@@ -122,12 +122,28 @@ function getRideControl() {
 function getDrivers() {
 
    let driversRecord = firebase.database().ref("/drivers");
-   console.log(mUser.uid);
-   console.log(driversRecord);
+   //console.log(mUser.uid);
+   //console.log(driversRecord);
 
    driversRecord.on('value', (snapshot) => {
       if (snapshot.exists()) {
-         console.log(snapshot.val());
+
+         snapshot.forEach((childSnapshot) => {
+            console.log(childSnapshot.key);
+
+            console.log(childSnapshot.val().last_loc);
+
+            var driver_loc = childSnapshot.val().last_loc;
+
+            if (mMap != null) {
+            var marker = new google.maps.Marker({
+               position: driver_loc,
+               map: mMap,
+               icon: "/images/icons8-car-24.png"
+            });
+            }
+
+         });
 
 
       }
