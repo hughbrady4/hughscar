@@ -1,7 +1,7 @@
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-var firebaseConfig = {
+let firebaseConfig = {
    apiKey: "AIzaSyCj2ojD-AObyfiP-aTl6eRMnZNt2TrX__w",
    authDomain: "hughscar-6ac7d.firebaseapp.com",
    databaseURL: "https://hughscar-6ac7d-default-rtdb.firebaseio.com",
@@ -20,12 +20,14 @@ const SERVICE_AREA_BOUNDS = {
 };
 
 
-var mMap;
-var mUserLat;
-var mUserLng;
-var mPickupMarker;
-var mStatus;
-var mDrivers = new Map();
+let mMap;
+let mUserLat;
+let mUserLng;
+let mPickupMarker;
+let mStatus;
+let mDrivers = new Map();
+let mDirectionsService;
+let mDirectionsRenderer;
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
@@ -133,11 +135,11 @@ function getDrivers() {
             console.log(snapshot.key);
             console.log(snapshot.val().last_loc);
 
-            var key = snapshot.key;
-            var driver_loc = snapshot.val().last_loc;
+            let key = snapshot.key;
+            let driver_loc = snapshot.val().last_loc;
 
             if (mMap != null) {
-               var marker = new google.maps.Marker({
+               let marker = new google.maps.Marker({
                   position: driver_loc,
                   map: mMap,
                   icon: "/images/icons8-car-24.png"
@@ -154,9 +156,9 @@ function getDrivers() {
          //snapshot.forEach((childSnapshot) => {
             console.log(snapshot.key);
             console.log(snapshot.val().last_loc);
-            var key = snapshot.key;
-            var driverLoc = snapshot.val().last_loc;
-            var marker = mDrivers.get(key);
+            let key = snapshot.key;
+            let driverLoc = snapshot.val().last_loc;
+            let marker = mDrivers.get(key);
             marker.setPosition(driverLoc);
          //});
       }
@@ -214,6 +216,12 @@ function setPickupMarker(atLatLng, geoCode) {
          geoCodeMarker(document.getElementById("pickup"), mPickupMarker.getPosition());
       });
 
+      // mPickupMarker.addListener("position_changed", (event) => {
+      //    routePickup();
+      //
+      // });
+
+
 
    } else {
       mPickupMarker.setPosition(atLatLng);
@@ -223,6 +231,38 @@ function setPickupMarker(atLatLng, geoCode) {
    if (geoCode) {
       geoCodeMarker(document.getElementById("pickup"), atLatLng);
    }
+
+   routePickup();
+
+}
+
+
+function routePickup() {
+
+   let origins = [];
+
+   mDrivers.forEach((item, i) => {
+      origins.push(item.position);
+
+   });
+
+   console.log(origins);
+
+   let request = {
+      origin: mDrivers.get("06q2Ag2lwmODwXTqkVXtlmkVPzD3").position,
+      destination: mPickupMarker.getPosition(),
+      //waypoints: waypts,
+      //optimizeWaypoints: true,
+      travelMode: 'DRIVING',
+      //drivingOptions: { departureTime: departTime, trafficModel: "pessimistic"},
+   };
+
+   mDirectionsService.route(request, (response, status) => {
+      if (status == 'OK') {
+         mDirectionsRenderer.setDirections(response);
+      }
+   });
+
 
 }
 
@@ -268,6 +308,20 @@ function initMap() {
       //    latLngBounds: SERVICE_AREA_BOUNDS,
       //    strictBounds: false,
       // }
+   });
+
+   mDirectionsService = new google.maps.DirectionsService();
+
+
+   let markerOptions = {
+      visible: false,
+   };
+
+   mDirectionsRenderer = new google.maps.DirectionsRenderer({
+      //panel: directionsPanel,
+      markerOptions: markerOptions,
+      draggable: false,
+      map: mMap,
    });
 
    // const directionsService = new google.maps.DirectionsService();
