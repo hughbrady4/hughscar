@@ -25,6 +25,7 @@ var mUserLat;
 var mUserLng;
 var mPickupMarker;
 var mStatus;
+var mDrivers = new Map();
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
@@ -125,27 +126,39 @@ function getDrivers() {
    //console.log(mUser.uid);
    //console.log(driversRecord);
 
-   driversRecord.on('value', (snapshot) => {
+   driversRecord.on('child_added', (snapshot) => {
       if (snapshot.exists()) {
 
-         snapshot.forEach((childSnapshot) => {
-            console.log(childSnapshot.key);
+         //snapshot.forEach((childSnapshot) => {
+            console.log(snapshot.key);
+            console.log(snapshot.val().last_loc);
 
-            console.log(childSnapshot.val().last_loc);
-
-            var driver_loc = childSnapshot.val().last_loc;
+            var key = snapshot.key;
+            var driver_loc = snapshot.val().last_loc;
 
             if (mMap != null) {
-            var marker = new google.maps.Marker({
-               position: driver_loc,
-               map: mMap,
-               icon: "/images/icons8-car-24.png"
-            });
+               var marker = new google.maps.Marker({
+                  position: driver_loc,
+                  map: mMap,
+                  icon: "/images/icons8-car-24.png"
+               });
+               mDrivers.set(key, marker);
             }
 
-         });
+         //});
+      }
+   });
 
-
+   driversRecord.on('child_changed', (snapshot) => {
+      if (snapshot.exists()) {
+         //snapshot.forEach((childSnapshot) => {
+            console.log(snapshot.key);
+            console.log(snapshot.val().last_loc);
+            var key = snapshot.key;
+            var driverLoc = snapshot.val().last_loc;
+            var marker = mDrivers.get(key);
+            marker.setPosition(driverLoc);
+         //});
       }
    });
 
