@@ -310,8 +310,17 @@ function initMap() {
       // }
    });
 
-   mDirectionsService = new google.maps.DirectionsService();
+   const locationButton = document.createElement("button");
 
+   locationButton.textContent = "Current Location";
+   locationButton.classList.add("custom-map-control-button");
+   mMap.controls[google.maps.ControlPosition.TOP_RIGHT].push(locationButton);
+
+   locationButton.addEventListener("click", () => {
+      requestLocation();
+   });
+
+   mDirectionsService = new google.maps.DirectionsService();
 
    let markerOptions = {
       visible: false,
