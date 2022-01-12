@@ -237,6 +237,7 @@ function setPickupMarker(atLatLng, geoCode) {
       mPickupMarker.addListener("dragend", (event) => {
          //addressField.value = marker.getPosition();
          geoCodeMarker(document.getElementById("pickup"), mPickupMarker.getPosition());
+         routePickup();
       });
 
       // mPickupMarker.addListener("position_changed", (event) => {
