@@ -41,6 +41,29 @@ function initApp() {
    initAuth();
    requestLocation();
 
+   const pickupAddressField = document.getElementById("pickup");
+
+   pickupAddressField.addEventListener("change", () => {
+
+      let geoCoder = new google.maps.Geocoder();
+      let address = pickupAddressField.value;
+
+      console.log(address);
+      //console.log(label);
+
+      geoCoder.geocode({ address: address }, (results, status) => {
+         if (status === "OK") {
+            if (results[0]) {
+               console.log(results[0]);
+               pickupAddressField.value = results[0].formatted_address;
+               setPickupMarker(results[0].geometry.location, false);
+            }
+         } else {
+            userMessage(status);
+         }
+      });
+   });
+
 }
 
 
