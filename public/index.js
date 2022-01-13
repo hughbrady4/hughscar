@@ -154,36 +154,35 @@ function getDrivers() {
    driversRecord.on('child_added', (snapshot) => {
       if (snapshot.exists()) {
 
-         //snapshot.forEach((childSnapshot) => {
-            console.log(snapshot.key);
-            console.log(snapshot.val().last_loc);
+         console.log(snapshot.key);
+         console.log(snapshot.val().last_loc);
 
-            let key = snapshot.key;
-            let driver_loc = snapshot.val().last_loc;
+         let key = snapshot.key;
+         let driver_loc = snapshot.val().last_loc;
 
-            if (mMap != null) {
-               let marker = new google.maps.Marker({
-                  position: driver_loc,
-                  map: mMap,
-                  icon: "/images/icons8-car-24.png"
-               });
-               mDrivers.set(key, marker);
-            }
+         let marker = new google.maps.Marker({
+            position: driver_loc,
+            map: mMap,
+            icon: "/images/icons8-car-24.png"
+         });
 
-         //});
+         mDrivers.set(key, marker);
+         routePickup();
       }
    });
 
    driversRecord.on('child_changed', (snapshot) => {
       if (snapshot.exists()) {
-         //snapshot.forEach((childSnapshot) => {
-            console.log(snapshot.key);
-            console.log(snapshot.val().last_loc);
-            let key = snapshot.key;
-            let driverLoc = snapshot.val().last_loc;
-            let marker = mDrivers.get(key);
-            marker.setPosition(driverLoc);
-         //});
+         console.log(snapshot.key);
+         console.log(snapshot.val().last_loc);
+
+         let key = snapshot.key;
+         let driverLoc = snapshot.val().last_loc;
+
+         let marker = mDrivers.get(key);
+         marker.setPosition(driverLoc);
+
+         routePickup();
       }
    });
 
@@ -272,20 +271,24 @@ function routePickup() {
 
    console.log(origins);
 
-   let request = {
-      origin: mDrivers.get("06q2Ag2lwmODwXTqkVXtlmkVPzD3").position,
-      destination: mPickupMarker.getPosition(),
-      //waypoints: waypts,
-      //optimizeWaypoints: true,
-      travelMode: 'DRIVING',
-      //drivingOptions: { departureTime: departTime, trafficModel: "pessimistic"},
-   };
+   if (mDrivers != null && mPickupMarker != null) {
 
-   mDirectionsService.route(request, (response, status) => {
-      if (status == 'OK') {
-         mDirectionsRenderer.setDirections(response);
-      }
-   });
+     let request = {
+        origin: mDrivers.get("06q2Ag2lwmODwXTqkVXtlmkVPzD3").position,
+        destination: mPickupMarker.getPosition(),
+        //waypoints: waypts,
+        //optimizeWaypoints: true,
+        travelMode: 'DRIVING',
+        //drivingOptions: { departureTime: departTime, trafficModel: "pessimistic"},
+     };
+
+     mDirectionsService.route(request, (response, status) => {
+        if (status == 'OK') {
+           mDirectionsRenderer.setDirections(response);
+        }
+     });
+
+   }
 
 
 }
