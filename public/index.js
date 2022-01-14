@@ -147,7 +147,8 @@ function getRideControl() {
 
 function getDrivers() {
 
-   let driversRecord = firebase.database().ref("/drivers");
+   let driversRecord = firebase.database().ref("/drivers")
+      .orderByChild("status").equalTo("online");
    //console.log(mUser.uid);
    //console.log(driversRecord);
 
@@ -181,6 +182,23 @@ function getDrivers() {
 
          let marker = mDrivers.get(key);
          marker.setPosition(driverLoc);
+
+         routePickup();
+      }
+   });
+
+   driversRecord.on('child_removed', (snapshot) => {
+      if (snapshot.exists()) {
+         console.log(snapshot.key);
+         console.log(snapshot.val().last_loc);
+
+         let key = snapshot.key;
+         let driverLoc = snapshot.val().last_loc;
+
+         let marker = mDrivers.get(key);
+
+         marker.setMap(null);
+         mDrivers.delete(key);
 
          routePickup();
       }
@@ -271,26 +289,26 @@ function routePickup() {
 
    console.log(origins);
 
-   if (mDrivers != null && mPickupMarker != null) {
+   if (mDrivers.get("F4twFRaFGsMOsQQXyQFgkPPR3Id2") != null && mPickupMarker != null) {
 
-     let request = {
-        origin: mDrivers.get("06q2Ag2lwmODwXTqkVXtlmkVPzD3").position,
-        destination: mPickupMarker.getPosition(),
-        //waypoints: waypts,
-        //optimizeWaypoints: true,
-        travelMode: 'DRIVING',
-        //drivingOptions: { departureTime: departTime, trafficModel: "pessimistic"},
-     };
+      let request = {
+         origin: mDrivers.get("F4twFRaFGsMOsQQXyQFgkPPR3Id2").position,
+         destination: mPickupMarker.getPosition(),
+         //waypoints: waypts,
+         //optimizeWaypoints: true,
+         travelMode: 'DRIVING',
+         //drivingOptions: { departureTime: departTime, trafficModel: "pessimistic"},
+      };
 
-     mDirectionsService.route(request, (response, status) => {
-        if (status == 'OK') {
-           mDirectionsRenderer.setDirections(response);
-        }
-     });
-
+      mDirectionsService.route(request, (response, status) => {
+         if (status == 'OK') {
+            mDirectionsRenderer.setDirections(response);
+            mDirectionsRenderer.setMap(mMap);
+         }
+      });
+   } else {
+      mDirectionsRenderer.setMap(null);
    }
-
-
 }
 
 function geoCodeMarker(addressField, atLatLng) {
