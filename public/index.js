@@ -304,6 +304,7 @@ function routePickup() {
          if (status == 'OK') {
             mDirectionsRenderer.setDirections(response);
             mDirectionsRenderer.setMap(mMap);
+            $("#link-request").show();
          }
       });
    } else {
@@ -448,6 +449,7 @@ function initAuth() {
          userMessage("You are logged out.");
 
          $("#link-signOut").hide();
+         $("#link-request").hide();
          // photoUrl = "blank-profile-picture-973460_640.png";
          // $("#profile-picture").attr("src", photoUrl);
 
@@ -466,6 +468,32 @@ function initAuth() {
       userMessage("GoodBye!");
 
    });
+
+   const linkRequest = document.getElementById('link-request');
+
+   linkRequest.addEventListener('click', e => {
+
+      firebase.database().ref('ride-requests/' + mUser.uid).set({
+         // username: user.displayName,
+         // email: user.email,
+         // profile_picture : user.photoURL,
+         // rider_uid: mUser.uid,
+         // user_name: user.displayName,
+         // status: "Ready",
+         startedAt: firebase.database.ServerValue.TIMESTAMP,
+         // request_date: document.getElementById("date").value,
+         // request_time: document.getElementById("time").value,
+         point_A: mPickupMarker.getPosition().toJSON(),
+         point_A_address: document.getElementById("pickup").value,
+         // point_B: mDestinationMarker.position.toJSON(),
+         // point_B_address: document.getElementById("destination").value,
+      });
+      userMessage("Request record created!");
+
+   });
+
+
+
 
 }
 
