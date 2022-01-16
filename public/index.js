@@ -70,30 +70,22 @@ function initApp() {
 function getRideControl() {
 
 
-   self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+   //self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
    //initializeAppCheck(app, {/* App Check options */ });
 
-   // createUserRecord(mUser);
-   //
-   // let rideControlData = firebase.database().ref("/control-data/")
-   //                    //.child(mUser.uid)
-   //                    //.orderByChild("status")
-   //                    //.equalTo("started")
-   //                    .limitToFirst(1);
-
-
-
-   let rideControlRecord = firebase.database().ref("/riders/")
-                      .child(mUser.uid);
+   let rideControlRecord = firebase.database().ref("/ride-requests/")
+                      .child(mUser.uid).child("status");
                       //.equalTo("started")
                       //.limitToFirst(1);
    console.log(mUser.uid);
-   console.log(rideControlRecord);
 
    rideControlRecord.on('value', (snapshot) => {
       if (snapshot.exists()) {
-         mStatus = snapshot.val().status;
+
+         mStatus = snapshot.val();
          console.log(mStatus);
+
+
          // let statusField = document.getElementById("status");
          // statusField.innerHTML = status;
          if (status == "new") {
@@ -106,39 +98,6 @@ function getRideControl() {
             // setUI4DriverInRoute(childKey);
          }
 
-         // snapshot.forEach((childSnapshot) => {
-         //    let childKey = childSnapshot.key;
-         //    let childData = childSnapshot.val();
-         //    console.log(childKey);
-         //    let status = childData;
-         //    console.log(status);
-         //
-         //
-         //    if (status == "New Request") {
-         //       setUI4Input(childKey, childData);
-         //    } else if (status == "Ready") {
-         //       setUI4Ready(childKey, childData);
-         //    } else if (status == "canceled") {
-         //       setUI4Input(childKey, childData);
-         //    } else if (status == "accepted") {
-         //       setUI4DriverInRoute(childKey);
-         //    }
-         //
-         //
-         //  });
-
-
-      } else {
-        console.log("new");
-
-         let rideControlKey = firebase.database().ref("/riders/")
-                              .child(mUser.uid);
-
-         rideControlKey.set({
-            status: "new",
-            startedAt: firebase.database.ServerValue.TIMESTAMP,
-         });
-         //setUI4Input(rideRequestKey);
       }
    });
 
@@ -479,7 +438,7 @@ function initAuth() {
          // profile_picture : user.photoURL,
          // rider_uid: mUser.uid,
          // user_name: user.displayName,
-         // status: "Ready",
+         status: "Requested",
          startedAt: firebase.database.ServerValue.TIMESTAMP,
          // request_date: document.getElementById("date").value,
          // request_time: document.getElementById("time").value,
