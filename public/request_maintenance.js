@@ -82,17 +82,17 @@ function readRequests() {
       console.log(data.val());
       const newRow = document.createElement("tr");
       const newCol1 = document.createElement("td");
-      const newCol2 = document.createElement("td");
+      // const newCol2 = document.createElement("td");
       const newCol3 = document.createElement("td");
       const newCol4 = document.createElement("td");
 
       newCol1.innerHTML = data.val().request_date;
-      newCol2.innerHTML = data.val().request_time;
+      // newCol2.innerHTML = data.val().request_time;
       newCol3.innerHTML = data.val().point_A_address;
       newCol4.innerHTML = data.val().status;
 
       newRow.appendChild(newCol1);
-      newRow.appendChild(newCol2);
+      // newRow.appendChild(newCol2);
       newRow.appendChild(newCol3);
       newRow.appendChild(newCol4);
 
