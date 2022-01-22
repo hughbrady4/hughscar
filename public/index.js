@@ -432,21 +432,61 @@ function initAuth() {
 
    linkRequest.addEventListener('click', e => {
 
-      firebase.database().ref('ride-requests/' + mUser.uid).set({
-         // username: user.displayName,
-         // email: user.email,
-         // profile_picture : user.photoURL,
-         // rider_uid: mUser.uid,
+      let rideRequestRef = firebase.database().ref("/ride-requests/").push();
+      let updates = {};
+
+      let departureTime = new Date();
+
+      updates["/ride-requests/" + rideRequestRef.key] = {
+         rider_uid: mUser.uid,
+         //user_name: user.displayName,
+         status: "Ready",
+         startedAt: firebase.database.ServerValue.TIMESTAMP,
+         request_date: departureTime,
+         //request_time: document.getElementById("time").value,
+         point_A: mPickupMarker.getPosition().toJSON(),
+         point_A_address: document.getElementById("pickup").value,
+         //point_B: mDestinationMarker.position.toJSON(),
+         //point_B_address: document.getElementById("destination").value,
+      };
+
+      updates["/ride-requests-by-user/" + mUser.uid + "/" + rideRequestRef.key] = {
+         status: "Ready",
          // user_name: user.displayName,
-         status: "Requested",
          startedAt: firebase.database.ServerValue.TIMESTAMP,
          // request_date: document.getElementById("date").value,
          // request_time: document.getElementById("time").value,
          point_A: mPickupMarker.getPosition().toJSON(),
          point_A_address: document.getElementById("pickup").value,
-         // point_B: mDestinationMarker.position.toJSON(),
+         // point_B: mDestinationMarker.getPosition().toJSON(),
          // point_B_address: document.getElementById("destination").value,
-      });
+      };
+
+      updates["/ride-control/" + mUser.uid + "/current_request"] = rideRequestRef.key;
+      updates["/ride-control/" + mUser.uid + "/status"] = "Ready";
+      updates["/ride-control/" + mUser.uid + "/ready_at"] =
+         firebase.database.ServerValue.TIMESTAMP;
+
+
+      let result = firebase.database().ref().update(updates);
+
+      console.log(result);
+
+      // firebase.database().ref('ride-requests/' + mUser.uid).set({
+      //    // username: user.displayName,
+      //    // email: user.email,
+      //    // profile_picture : user.photoURL,
+      //    // rider_uid: mUser.uid,
+      //    // user_name: user.displayName,
+      //    status: "Requested",
+      //    startedAt: firebase.database.ServerValue.TIMESTAMP,
+      //    // request_date: document.getElementById("date").value,
+      //    // request_time: document.getElementById("time").value,
+      //    point_A: mPickupMarker.getPosition().toJSON(),
+      //    point_A_address: document.getElementById("pickup").value,
+      //    // point_B: mDestinationMarker.position.toJSON(),
+      //    // point_B_address: document.getElementById("destination").value,
+      // });
       userMessage("Request record created!");
 
    });
