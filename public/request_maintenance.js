@@ -34,6 +34,8 @@ function readRequests() {
    openRequests.on('child_added', (data) => {
       console.log(data.val());
       const newRow = document.createElement("tr");
+      newRow.id = data.key;
+
       const newCol1 = document.createElement("td");
       // const newCol2 = document.createElement("td");
       const newCol3 = document.createElement("td");
@@ -62,8 +64,12 @@ function readRequests() {
          console.log(data.val());
       });
       document.getElementById("user-list-table").appendChild(newRow);
+   });
 
-
+   openRequests.on('child_removed', (data) => {
+      console.log(data.val());
+      document.getElementById("user-list-table")
+         .removeChild(document.getElementById(data.key));
    });
 
 
