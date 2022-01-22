@@ -24,7 +24,6 @@ let mMap;
 let mUserLat;
 let mUserLng;
 let mPickupMarker;
-let mStatus;
 let mDrivers = new Map();
 let mDirectionsService;
 let mDirectionsRenderer;
@@ -67,38 +66,21 @@ function initApp() {
 }
 
 
-function getRideControl() {
+function getRideRequests() {
+
+   let rideControlRecord = firebase.database().ref("/ride-requests-by-user/")
+                      .child(mUser.uid);
+
+   rideControlRecord.on('child_added', (snapshot) => {
+
+      let key = snapshot.key;
+      userMessage("Ride request in progress: " + key);
+
+      //disable request button
+      document.getElementById("link-request").disabled = true;
+      document.getElementById("pickup").readOnly = true;
 
 
-   //self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-   //initializeAppCheck(app, {/* App Check options */ });
-
-   let rideControlRecord = firebase.database().ref("/ride-requests/")
-                      .child(mUser.uid).child("status");
-                      //.equalTo("started")
-                      //.limitToFirst(1);
-   console.log(mUser.uid);
-
-   rideControlRecord.on('value', (snapshot) => {
-      if (snapshot.exists()) {
-
-         mStatus = snapshot.val();
-         console.log(mStatus);
-
-
-         // let statusField = document.getElementById("status");
-         // statusField.innerHTML = status;
-         if (status == "new") {
-            // setUI4Input();
-         } else if (status == "ready") {
-            // setUI4Ready(snapshot.val().current_request);
-         } else if (status == "canceled") {
-            // setUI4Input(childKey, childData);
-         } else if (status == "accepted") {
-            // setUI4DriverInRoute(childKey);
-         }
-
-      }
    });
 
 }
@@ -400,7 +382,7 @@ function initAuth() {
          // $("#profile-email").text(email);
          // $("#profile-card").show();
 
-         getRideControl();
+         getRideRequests();
          getDrivers();
 
       } else {
@@ -431,6 +413,11 @@ function initAuth() {
    const linkRequest = document.getElementById('link-request');
 
    linkRequest.addEventListener('click', e => {
+
+      if (mPickupMarker == null) {
+        userMessage("Pickup location is not set.");
+        return;
+      }
 
       let rideRequestRef = firebase.database().ref("/ride-requests/").push();
       let updates = {};
@@ -470,23 +457,7 @@ function initAuth() {
 
       let result = firebase.database().ref().update(updates);
 
-      console.log(result);
 
-      // firebase.database().ref('ride-requests/' + mUser.uid).set({
-      //    // username: user.displayName,
-      //    // email: user.email,
-      //    // profile_picture : user.photoURL,
-      //    // rider_uid: mUser.uid,
-      //    // user_name: user.displayName,
-      //    status: "Requested",
-      //    startedAt: firebase.database.ServerValue.TIMESTAMP,
-      //    // request_date: document.getElementById("date").value,
-      //    // request_time: document.getElementById("time").value,
-      //    point_A: mPickupMarker.getPosition().toJSON(),
-      //    point_A_address: document.getElementById("pickup").value,
-      //    // point_B: mDestinationMarker.position.toJSON(),
-      //    // point_B_address: document.getElementById("destination").value,
-      // });
       userMessage("Request record created!");
 
    });
