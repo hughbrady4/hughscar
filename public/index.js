@@ -27,6 +27,8 @@ let mPickupMarker;
 let mDrivers = new Map();
 let mDirectionsService;
 let mDirectionsRenderer;
+let mLocationButton;
+let mRequestInProgress = false;
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
@@ -38,7 +40,9 @@ function initApp() {
    userMessage("Welcome!");
    initMap();
    initAuth();
-   requestLocation();
+   if (mRequestInProgress == false) {
+      requestLocation();
+   }
 
    const pickupAddressField = document.getElementById("pickup");
 
@@ -75,8 +79,12 @@ function getRideRequests() {
 
       let key = snapshot.key;
       userMessage("Ride request in progress: " + key);
+      mRequestInProgress = true;
 
       //disable request button
+      mLocationButton.disabled = true;
+      setPickupMarker(snapshot.val().point_A);
+      mPickupMarker.draggable = false;
       document.getElementById("link-request").disabled = true;
       document.getElementById("pickup").readOnly = true;
 
@@ -102,13 +110,13 @@ function getDrivers() {
          let key = snapshot.key;
          let driver_loc = snapshot.val().last_loc;
 
-         let marker = new google.maps.Marker({
+         mDriverMarker = new google.maps.Marker({
             position: driver_loc,
             map: mMap,
             icon: "/images/icons8-car-24.png"
          });
 
-         mDrivers.set(key, marker);
+         mDrivers.set(key, mDriverMarker);
          routePickup();
       }
    });
@@ -232,8 +240,10 @@ function routePickup() {
 
    if (mDrivers.get("F4twFRaFGsMOsQQXyQFgkPPR3Id2") != null && mPickupMarker != null) {
 
+      let driverPosition = mDrivers.get("F4twFRaFGsMOsQQXyQFgkPPR3Id2").position;
+
       let request = {
-         origin: mDrivers.get("F4twFRaFGsMOsQQXyQFgkPPR3Id2").position,
+         origin: driverPosition,
          destination: mPickupMarker.getPosition(),
          //waypoints: waypts,
          //optimizeWaypoints: true,
@@ -246,6 +256,17 @@ function routePickup() {
             mDirectionsRenderer.setDirections(response);
             mDirectionsRenderer.setMap(mMap);
             $("#link-request").show();
+            console.log(response.routes[0].legs[0].duration);
+            let driverInfowindow = new google.maps.InfoWindow({
+               map: mMap,
+               anchor: mDriverMarker,
+               content: "Oh hello, I'm currently online and " + response.routes[0].legs[0].duration.text + " away.",
+               position: driverPosition,
+            });
+            driverInfowindow.open(mMap);
+
+
+
          }
       });
    } else {
@@ -297,13 +318,14 @@ function initMap() {
       // }
    });
 
-   const locationButton = document.createElement("button");
+   mLocationButton = document.createElement("button");
 
-   locationButton.textContent = "Current Location";
-   locationButton.classList.add("custom-map-control-button");
-   mMap.controls[google.maps.ControlPosition.TOP_RIGHT].push(locationButton);
+   mLocationButton.textContent = "Current Location";
+   mLocationButton.id = "button-location";
+   mLocationButton.classList.add("custom-map-control-button");
+   mMap.controls[google.maps.ControlPosition.TOP_RIGHT].push(mLocationButton);
 
-   locationButton.addEventListener("click", () => {
+   mLocationButton.addEventListener("click", () => {
       requestLocation();
    });
 
