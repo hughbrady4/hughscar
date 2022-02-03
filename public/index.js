@@ -40,9 +40,7 @@ function initApp() {
    userMessage("Welcome!");
    initMap();
    initAuth();
-   if (mRequestInProgress == false) {
-      requestLocation();
-   }
+
 
    const pickupAddressField = document.getElementById("pickup");
 
@@ -75,20 +73,31 @@ function getRideRequests() {
    let rideControlRecord = firebase.database().ref("/ride-requests-by-user/")
                       .child(mUser.uid);
 
-   rideControlRecord.on('child_added', (snapshot) => {
+   // rideControlRecord.on('child_added', (snapshot) => {
 
-      let key = snapshot.key;
-      userMessage("Ride request in progress: " + key);
-      mRequestInProgress = true;
+   rideControlRecord.get().then((snapshot) => {
 
-      //disable request button
-      mLocationButton.disabled = true;
-      setPickupMarker(snapshot.val().point_A);
-      mPickupMarker.draggable = false;
-      document.getElementById("link-request").disabled = true;
-      document.getElementById("pickup").readOnly = true;
+      if (snapshot.exists()) {
+         let key = snapshot.key;
+         //userMessage("Ride request in progress: " + key);
+         mRequestInProgress = true;
 
+         //disable request button
+         mLocationButton.disabled = true;
+         setPickupMarker(snapshot.val().point_A);
+         mPickupMarker.draggable = false;
+         document.getElementById("link-request").disabled = true;
+         document.getElementById("pickup").readOnly = true;
+         document.getElementById("pickup").value = snapshot.val().point_A_address;
 
+      } else {
+         //if (mRequestInProgress == false) {
+         requestLocation();
+         //}
+      }
+
+   }).catch((error) => {
+      userMessage(error);
    });
 
 }
@@ -342,18 +351,6 @@ function initMap() {
       map: mMap,
    });
 
-   // const directionsService = new google.maps.DirectionsService();
-   // const directionsRenderer = new google.maps.DirectionsRenderer({
-   //    draggable: true,
-   //    mMap,
-   //    // panel: document.getElementById("right-panel"),
-   // });
-   // directionsRenderer.addListener("directions_changed", () => {
-   //    computeTotalDistance(directionsRenderer.getDirections());
-   // });
-
-   // let infoPanel = document.getElementById("infoPanel");
-   // mMap.controls[google.maps.ControlPosition.LEFT_TOP].push(infoPanel);
 }
 
 
@@ -459,8 +456,9 @@ function initAuth() {
          //point_B_address: document.getElementById("destination").value,
       };
 
-      updates["/ride-requests-by-user/" + mUser.uid + "/" + rideRequestRef.key] = {
+      updates["/ride-requests-by-user/" + mUser.uid] = {
          status: "Ready",
+         rideRequestKey: rideRequestRef.key,
          // user_name: user.displayName,
          startedAt: firebase.database.ServerValue.TIMESTAMP,
          // request_date: document.getElementById("date").value,
