@@ -90,6 +90,16 @@ function getRideRequests() {
          document.getElementById("pickup").readOnly = true;
          document.getElementById("pickup").value = snapshot.val().point_A_address;
 
+
+         let isDriver = snapshot.val().is_driver;
+         userMessage(isDriver);
+
+         if (isDriver == true) {
+           $("#link-drive").show();
+
+         } else {
+            $("#link-drive").hide();
+         }
       } else {
          //if (mRequestInProgress == false) {
          requestLocation();
