@@ -1,6 +1,3 @@
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 let firebaseConfig = {
    apiKey: "AIzaSyCj2ojD-AObyfiP-aTl6eRMnZNt2TrX__w",
    authDomain: "hughscar-6ac7d.firebaseapp.com",
@@ -19,7 +16,6 @@ const SERVICE_AREA_BOUNDS = {
    east: -92.57243360834524,
 };
 
-
 let mMap;
 let mUserLat;
 let mUserLng;
@@ -33,14 +29,10 @@ let mRequestInProgress = false;
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();
-//console.log(firebase);
-
 
 function initApp() {
-   userMessage("Welcome!");
    initMap();
    initAuth();
-
 
    const pickupAddressField = document.getElementById("pickup");
 
@@ -66,7 +58,6 @@ function initApp() {
    });
 
 }
-
 
 function getRideRequests() {
 
@@ -111,7 +102,6 @@ function getRideRequests() {
    });
 
 }
-
 
 function getDrivers() {
 
@@ -173,7 +163,6 @@ function getDrivers() {
    });
 
 }
-
 
 function requestLocation() {
   if (navigator.geolocation) {
@@ -245,7 +234,6 @@ function setPickupMarker(atLatLng, geoCode) {
 
 }
 
-
 function routePickup() {
 
    let origins = [];
@@ -315,7 +303,6 @@ function geoCodeMarker(addressField, atLatLng) {
 
 }
 
-
 function initMap() {
    let zoom = 11;
    if (mUserLat == null || mUserLng == null ) {
@@ -362,7 +349,6 @@ function initMap() {
    });
 
 }
-
 
 function initAuth() {
 

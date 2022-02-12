@@ -1,6 +1,4 @@
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 var firebaseConfig = {
    apiKey: "AIzaSyCj2ojD-AObyfiP-aTl6eRMnZNt2TrX__w",
    authDomain: "hughscar-6ac7d.firebaseapp.com",
@@ -83,38 +81,43 @@ function initApp() {
 
    mInfoWindow = new google.maps.InfoWindow();
 
-   const locationButton = document.createElement("button");
-   locationButton.textContent = "Pan to Current Location";
-   locationButton.classList.add("custom-map-control-button");
-   mMap.controls[google.maps.ControlPosition.TOP_CENTER].push(locationButton);
-   locationButton.addEventListener("click", () => {
-      // Try HTML5 geolocation.
+   const goButton = document.createElement("button");
+   goButton.textContent = "Go Online";
+   goButton.classList.add("custom-map-control-button");
+   mMap.controls[google.maps.ControlPosition.TOP_CENTER].push(goButton);
+   goButton.addEventListener("click", () => {
+
       if (navigator.geolocation) {
          navigator.geolocation.getCurrentPosition((position) => {
-            const pos = {
-               lat: position.coords.latitude,
-               lng: position.coords.longitude,
+            mDriverLat = position.coords.latitude;
+            mDriverLng = position.coords.longitude;
+
+            // let rideRequest = snapshot.val();
+            // let userData = snapshot.val();
+            // data.status = "accepted";
+
+            let driver = {
+               last_loc: {lat: mDriverLat, lng: mDriverLng },
+               status: "online",
             };
-            mInfoWindow.setPosition(pos);
-            mInfoWindow.setContent("Location found.");
-            mInfoWindow.open(mMap);
-            mMap.setCenter(pos);
 
-            let driverControlKey = firebase.database().ref("/driver-control/")
-                                  .child(mUser.uid).child("location");
+            let driverRef = firebase.database().ref("drivers/" + firebase.auth().currentUser.uid);
+            driverRef.set(driver);
 
-            driverControlKey.set(pos);
+           // let updates = {};
+           // updates["/ride-requests/" + snapshot.key + "/status"] = "accepted";
+           // updates["/ride-requests-by-user/" + user.uid + "/" + snapshot.key + "/status"] = "accepted";
+           // updates["/ride-control/" + rideRequest.rider_uid + "/" + snapshot.key + "/status"] = "accepted";
+           //
+           // firebase.database().ref().update(updates);
 
-            let driverLocKey = firebase.database().ref("/drivers/")
-                                  .child(mUser.uid).child("last_loc");
-
-            driverLocKey.set(pos);
-         }, () => {
-            handleLocationError(true, mInfoWindow, mMap.getCenter());
+         }, (error) => {
+            errorMessage("Geolocation required to accept rides");
+            console.log(error.message);
          });
+
       } else {
-         // Browser doesn't support Geolocation
-         handleLocationError(false, mInfoWindow, mMap.getCenter());
+         errorMessage("Geolocation required to accept rides");
       }
    });
 }
@@ -199,8 +202,6 @@ function getDriverControl() {
    });
 
 }
-
-
 
 function displayRequest(snapshot) {
 
@@ -512,83 +513,6 @@ function writeAccept(snapshot) {
    } else {
       errorMessage("Geolocation required to accept rides");
    }
-}
-
-function writeRequest() {
-
-   let user = firebase.auth().currentUser;
-   if (!user) {
-      errorMessage("Login required to request pickup");
-      return;
-   }
-   let markerA = userMarkers[0];
-   let markerB = userMarkers[1];
-   let markerC = userMarkers[2];
-
-   let rideRequests = firebase.database().ref("/ride-requests/");
-   let rideRequestKey = rideRequests.push();
-   let updates = {};
-
-   rideRequestKey.set({
-     rider_uid: user.uid,
-     status: "open",
-     startedAt: firebase.database.ServerValue.TIMESTAMP,
-     request_date: document.getElementById("pickup-date-edit").value,
-     request_time: document.getElementById("pickup-time-edit").value,
-     point_A: markerA.getPosition().toJSON(),
-     point_B: markerB.position.toJSON(),
-     point_C: (markerC ? markerC.position.toJSON() : null),
-
-   });
-
-
-
-
-   // updates["/ride-requests/" + rideRequestKey] = {
-   //    rider_uid: user.uid,
-   //    status: "open",
-   //    startedAt: firebase.database.ServerValue.TIMESTAMP,
-   //    request_date: document.getElementById("pickup-date-edit").value,
-   //    request_time: document.getElementById("pickup-time-edit").value,
-   //    point_A: markerA.getPosition().toJSON(),
-   //    point_B: markerB.position.toJSON(),
-   //    point_C: (markerC ? markerC.position.toJSON() : null),
-   //
-   // };
-
-
-   let rideRequestsByUser = firebase.database().ref("/ride-requests-by-user/" + user.uid + "/" + rideRequestKey.key);
-   // let rideRequestsByUserKey = rideRequestsByUser.push();
-   rideRequestsByUser.set({
-     status: "open",
-     startedAt: firebase.database.ServerValue.TIMESTAMP,
-     request_date: document.getElementById("pickup-date-edit").value,
-     request_time: document.getElementById("pickup-time-edit").value,
-     point_A: userMarkers[0].getPosition().toJSON(),
-     point_B: userMarkers[1].getPosition().toJSON(),
-     point_C: (markerC ? markerC.position.toJSON() : null),
-
-   });
-
-
-   // updates["/ride-requests-by-user/" + user.uid + "/" + rideRequestKey] = {
-   //    status: "open",
-   //    startedAt: firebase.database.ServerValue.TIMESTAMP,
-   //    request_date: document.getElementById("pickup-date-edit").value,
-   //    request_time: document.getElementById("pickup-time-edit").value,
-   //    point_A: userMarkers[0].getPosition().toJSON(),
-   //    point_B: userMarkers[1].getPosition().toJSON(),
-   //    point_C: (markerC ? markerC.position.toJSON() : null),
-   //
-   // };
-
-   //let rideRequestsByUser = firebase.database().ref("ride-requests-by-user/" + user.uid);
-   //let rideRequestByUserRef = rideRequestsByUser.push();
-
-   // return firebase.database().ref().update(updates);
-
-
-
 }
 
 function errorMessage(message) {

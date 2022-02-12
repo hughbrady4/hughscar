@@ -4,8 +4,21 @@
 <meta charset="ISO-8859-1">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Driver App">
+
+
 <title>Hugh's Car Service</title>
 <link rel="stylesheet" href="css/styles.css">
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+
 <script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-analytics.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-database.js"></script>
@@ -17,16 +30,42 @@
 
 <body>
 
-<!-- <div id="firebaseui-auth-container"></div> -->
-<!-- <input type="text" id="address1" name="address"> -->
-<div id="loader"></div>
-<div id="firebaseui-auth-container">
-<h3 id="signin-heading">Please sign in to request a ride</h3>
+<div id="transportservice-header-container" class="container">
+
+<div class="row">
+
+<div class="col-lg-1" style="padding:3px 3px 3px 3px;">
+
+<a id="link-signOut" href="#" class="btn btn-primary">Signout</a>
+
 </div>
+
+<div class="col-lg-11" style="padding:3px 3px 3px 3px;">
+
+<h3>Hugh's Car Service</h3>
+<h5>Pueblo, CO</h5>
+
+
+</div>
+
+</div>
+
+</div>
+
+<div id="transportservice-content-container" class="container">
+
+<!-- <div id="loader"></div> -->
+<div id="firebaseui-auth-container">
+<!-- <h3 id="signin-heading">Please sign in to request a ride</h3> -->
+</div>
+
+
 <div id="map" class="map_full"></div>
 
 
 <div id="snackbar"></div>
+
+</div>
 
 <script src="driver.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9Gmjr0VbitRRSKgiGVG4xFc8Rgk7gK1Y&callback=initApp&libraries=&v=weekly"></script>
