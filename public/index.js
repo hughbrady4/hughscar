@@ -77,7 +77,8 @@ function getRideRequests() {
          mLocationButton.disabled = true;
          setPickupMarker(snapshot.val().point_A);
          mPickupMarker.draggable = false;
-         document.getElementById("link-request").disabled = true;
+         document.getElementById("btn-request").disabled = true;
+         $("#btn-request").hide();
          document.getElementById("pickup").readOnly = true;
          document.getElementById("pickup").value = snapshot.val().point_A_address;
 
@@ -262,7 +263,7 @@ function routePickup() {
          if (status == 'OK') {
             mDirectionsRenderer.setDirections(response);
             mDirectionsRenderer.setMap(mMap);
-            $("#link-request").show();
+            //$("#btn-request").show();
             console.log(response.routes[0].legs[0].duration);
             let driverInfowindow = new google.maps.InfoWindow({
                map: mMap,
@@ -405,7 +406,7 @@ function initAuth() {
          userMessage("You are logged out.");
 
          $("#link-signOut").hide();
-         $("#link-request").hide();
+         $("#btn-request").hide();
          // photoUrl = "blank-profile-picture-973460_640.png";
          // $("#profile-picture").attr("src", photoUrl);
 
@@ -425,7 +426,7 @@ function initAuth() {
 
    });
 
-   const linkRequest = document.getElementById('link-request');
+   const linkRequest = document.getElementById('btn-request');
 
    linkRequest.addEventListener('click', e => {
 
@@ -478,6 +479,14 @@ function initAuth() {
 
    });
 
+
+   const btnCancel = document.getElementById('btn-cancel');
+
+   btnCancel.addEventListener('click', e => {
+
+    
+
+   });
 
 
 
