@@ -104,6 +104,168 @@ function initApp() {
 
 }
 
+function initAuth() {
+
+   let ui = new firebaseui.auth.AuthUI(firebase.auth());
+
+   let uiConfig = {
+      callbacks: {
+         signInSuccessWithAuthResult: (authResult, redirectUrl) => {
+            // Return type determines whether we continue the redirect automatically
+            document.getElementById('firebaseui-auth-container').classList.remove("show");
+            // document.getElementById('main-controls-container').classList.add("show");
+
+            return false;
+         },
+         uiShown: function() {
+            //document.getElementById('loader').style.display = 'none';
+         }
+      },
+      signInFlow: 'popup',
+      signInOptions: [
+         //firebase.auth.EmailAuthProvider.PROVIDER_ID,
+         //firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+         firebase.auth.PhoneAuthProvider.PROVIDER_ID
+      ],
+      //tosUrl: '<your-tos-url>',
+      //privacyPolicyUrl: '<your-privacy-policy-url>'
+   };
+
+   firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+         mUser =  user;
+         document.getElementById('firebaseui-auth-container').classList.remove("show");
+         userMessage("You are logged in.");
+         $("#link-signOut").show();
+         name = user.displayName;
+         email = user.email;
+         photoUrl = user.photoURL;
+         emailVerified = user.emailVerified;
+         uid = user.uid;  // The user's ID, unique to the Firebase project. Do NOT use
+                      // this value to authenticate with your backend server, if
+                      // you have one. Use User.getToken() instead.
+         // console.log("  Name: " + name);
+         // console.log("  Url: " + photoUrl);
+         // $("#profile-picture").attr("src", photoUrl);
+         // $("#profile-name").text(name);
+         // $("#profile-email").text(email);
+         // $("#profile-card").show();
+
+         getRideRequests();
+         getDrivers();
+
+      } else {
+         document.getElementById('firebaseui-auth-container').classList.add("show");
+         userMessage("You are logged out.");
+
+         $("#link-signOut").hide();
+         $("#btn-request").hide();
+         // photoUrl = "blank-profile-picture-973460_640.png";
+         // $("#profile-picture").attr("src", photoUrl);
+
+         //document.getElementById('main-btn-grp').classList.remove("show");
+         // document.getElementById('btn-request-maintenance').classList.remove("show");
+         // document.getElementById('btn-driver-maintenance').classList.remove("show");
+         ui.start('#firebaseui-auth-container', uiConfig);
+      }
+   });
+
+   const linksignOut = document.getElementById('link-signOut');
+
+   linksignOut.addEventListener('click', e => {
+
+      firebase.auth().signOut();
+      userMessage("GoodBye!");
+
+   });
+
+   const linkRequest = document.getElementById('btn-request');
+
+   linkRequest.addEventListener('click', e => {
+
+      if (mPickupMarker == null) {
+        userMessage("Pickup location is not set.");
+        return;
+      }
+
+      mRideRequestRef = firebase.database().ref("/ride-requests/").push();
+      let updates = {};
+
+      let departureTime = new Date();
+
+      updates["/ride-requests/" + mRideRequestRef.key] = {
+         rider_uid: mUser.uid,
+         //user_name: user.displayName,
+         status: "Ready",
+         startedAt: firebase.database.ServerValue.TIMESTAMP,
+         request_date: departureTime,
+         //request_time: document.getElementById("time").value,
+         point_A: mPickupMarker.getPosition().toJSON(),
+         point_A_address: document.getElementById("pickup").value,
+         //point_B: mDestinationMarker.position.toJSON(),
+         //point_B_address: document.getElementById("destination").value,
+      };
+
+      updates["/ride-requests-by-user/" + mUser.uid] = {
+         status: "Ready",
+         rideRequestKey: mRideRequestRef.key,
+         // user_name: user.displayName,
+         startedAt: firebase.database.ServerValue.TIMESTAMP,
+         // request_date: document.getElementById("date").value,
+         // request_time: document.getElementById("time").value,
+         point_A: mPickupMarker.getPosition().toJSON(),
+         point_A_address: document.getElementById("pickup").value,
+         // point_B: mDestinationMarker.getPosition().toJSON(),
+         // point_B_address: document.getElementById("destination").value,
+      };
+
+      updates["/ride-control/" + mUser.uid + "/current_request"] = mRideRequestRef.key;
+      updates["/ride-control/" + mUser.uid + "/status"] = "Ready";
+      updates["/ride-control/" + mUser.uid + "/ready_at"] =
+         firebase.database.ServerValue.TIMESTAMP;
+
+
+      let result = firebase.database().ref().update(updates);
+
+
+      userMessage("Request record created!");
+
+   });
+
+
+   const btnCancel = document.getElementById('btn-cancel');
+
+   btnCancel.addEventListener('click', e => {
+
+      if (mRideRequestRef == null) {
+         userMessage("No request to cancel.");
+         return;
+      }
+
+      let updates = {};
+
+      updates["/ride-requests/" + mRideRequestRef.key + "/status"] = "Canceled";
+
+      updates["/ride-requests/" + mRideRequestRef.key + "/canceled_at"] =
+         firebase.database.ServerValue.TIMESTAMP;
+
+      updates["/ride-requests-by-user/" + mUser.uid + "/status"] = "Canceled";
+
+      updates["/ride-requests-by-user/" + mUser.uid + "/rideRequestKey"] = null;
+
+      updates["/ride-requests-by-user/" + mUser.uid + "/canceled_at"] =
+         firebase.database.ServerValue.TIMESTAMP;
+
+      updates["/ride-control/" + mUser.uid] = null;
+
+      let result = firebase.database().ref().update(updates);
+
+      userMessage("Request record canceled!");
+
+   });
+
+}
+
 function getRideRequests() {
 
    let rideControlRecord = firebase.database().ref("/ride-requests-by-user/")
@@ -379,172 +541,6 @@ function geoCodeMarker(addressField, atLatLng) {
       }
    });
 
-}
-
-function initAuth() {
-
-   let ui = new firebaseui.auth.AuthUI(firebase.auth());
-
-   let uiConfig = {
-      callbacks: {
-         signInSuccessWithAuthResult: (authResult, redirectUrl) => {
-            // Return type determines whether we continue the redirect automatically
-            document.getElementById('firebaseui-auth-container').classList.remove("show");
-            // document.getElementById('main-controls-container').classList.add("show");
-
-            return false;
-         },
-         uiShown: function() {
-            //document.getElementById('loader').style.display = 'none';
-         }
-      },
-      signInFlow: 'popup',
-      signInOptions: [
-         //firebase.auth.EmailAuthProvider.PROVIDER_ID,
-         //firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-         firebase.auth.PhoneAuthProvider.PROVIDER_ID
-      ],
-      //tosUrl: '<your-tos-url>',
-      //privacyPolicyUrl: '<your-privacy-policy-url>'
-   };
-
-   firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-         mUser =  user;
-         document.getElementById('firebaseui-auth-container').classList.remove("show");
-         userMessage("You are logged in.");
-         $("#link-signOut").show();
-         name = user.displayName;
-         email = user.email;
-         photoUrl = user.photoURL;
-         emailVerified = user.emailVerified;
-         uid = user.uid;  // The user's ID, unique to the Firebase project. Do NOT use
-                      // this value to authenticate with your backend server, if
-                      // you have one. Use User.getToken() instead.
-         // console.log("  Name: " + name);
-         // console.log("  Url: " + photoUrl);
-         // $("#profile-picture").attr("src", photoUrl);
-         // $("#profile-name").text(name);
-         // $("#profile-email").text(email);
-         // $("#profile-card").show();
-
-         getRideRequests();
-         getDrivers();
-
-      } else {
-         document.getElementById('firebaseui-auth-container').classList.add("show");
-         userMessage("You are logged out.");
-
-         $("#link-signOut").hide();
-         $("#btn-request").hide();
-         // photoUrl = "blank-profile-picture-973460_640.png";
-         // $("#profile-picture").attr("src", photoUrl);
-
-         //document.getElementById('main-btn-grp').classList.remove("show");
-         // document.getElementById('btn-request-maintenance').classList.remove("show");
-         // document.getElementById('btn-driver-maintenance').classList.remove("show");
-         ui.start('#firebaseui-auth-container', uiConfig);
-      }
-   });
-
-   const linksignOut = document.getElementById('link-signOut');
-
-   linksignOut.addEventListener('click', e => {
-
-      firebase.auth().signOut();
-      userMessage("GoodBye!");
-
-   });
-
-   const linkRequest = document.getElementById('btn-request');
-
-   linkRequest.addEventListener('click', e => {
-
-      if (mPickupMarker == null) {
-        userMessage("Pickup location is not set.");
-        return;
-      }
-
-      mRideRequestRef = firebase.database().ref("/ride-requests/").push();
-      let updates = {};
-
-      let departureTime = new Date();
-
-      updates["/ride-requests/" + mRideRequestRef.key] = {
-         rider_uid: mUser.uid,
-         //user_name: user.displayName,
-         status: "Ready",
-         startedAt: firebase.database.ServerValue.TIMESTAMP,
-         request_date: departureTime,
-         //request_time: document.getElementById("time").value,
-         point_A: mPickupMarker.getPosition().toJSON(),
-         point_A_address: document.getElementById("pickup").value,
-         //point_B: mDestinationMarker.position.toJSON(),
-         //point_B_address: document.getElementById("destination").value,
-      };
-
-      updates["/ride-requests-by-user/" + mUser.uid] = {
-         status: "Ready",
-         rideRequestKey: mRideRequestRef.key,
-         // user_name: user.displayName,
-         startedAt: firebase.database.ServerValue.TIMESTAMP,
-         // request_date: document.getElementById("date").value,
-         // request_time: document.getElementById("time").value,
-         point_A: mPickupMarker.getPosition().toJSON(),
-         point_A_address: document.getElementById("pickup").value,
-         // point_B: mDestinationMarker.getPosition().toJSON(),
-         // point_B_address: document.getElementById("destination").value,
-      };
-
-      updates["/ride-control/" + mUser.uid + "/current_request"] = mRideRequestRef.key;
-      updates["/ride-control/" + mUser.uid + "/status"] = "Ready";
-      updates["/ride-control/" + mUser.uid + "/ready_at"] =
-         firebase.database.ServerValue.TIMESTAMP;
-
-
-      let result = firebase.database().ref().update(updates);
-
-
-      userMessage("Request record created!");
-
-   });
-
-
-   const btnCancel = document.getElementById('btn-cancel');
-
-   btnCancel.addEventListener('click', e => {
-
-      if (mRideRequestRef == null) {
-         userMessage("No request to cancel.");
-         return;
-      }
-
-      let updates = {};
-
-      updates["/ride-requests/" + mRideRequestRef.key + "/status"] = "Canceled";
-
-      updates["/ride-requests/" + mRideRequestRef.key + "/canceled_at"] =
-         firebase.database.ServerValue.TIMESTAMP;
-
-      updates["/ride-requests-by-user/" + mUser.uid + "/status"] = "Canceled";
-
-      updates["/ride-requests-by-user/" + mUser.uid + "/rideRequestKey"] = null;
-
-      updates["/ride-requests-by-user/" + mUser.uid + "/canceled_at"] =
-         firebase.database.ServerValue.TIMESTAMP;
-
-      updates["/ride-control/" + mUser.uid] = null;
-
-      let result = firebase.database().ref().update(updates);
-
-      userMessage("Request record canceled!");
-
-   });
-
-}
-
-function signOut() {
-  firebase.auth().signOut();
 }
 
 function userMessage(message) {
