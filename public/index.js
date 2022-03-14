@@ -25,6 +25,7 @@ let mDirectionsService;
 let mDirectionsRenderer;
 let mLocationButton;
 let mRequestInProgress = false;
+let mRideRequestRef;
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
@@ -70,8 +71,40 @@ function getRideRequests() {
 
       if (snapshot.exists()) {
          let key = snapshot.key;
+
+
+         console.log(snapshot.val().status);
+
+         let status = snapshot.val().status;
+
+         if (status == "Canceled") {
+           mRequestInProgress = false;
+           mRideRequestRef = null;
+           mLocationButton.disabled = false;
+           setPickupMarker(snapshot.val().point_A);
+           mPickupMarker.draggable = true;
+           document.getElementById("btn-request").disabled = false;
+           $("#btn-request").show();
+           document.getElementById("pickup").readOnly = false;
+           document.getElementById("pickup").value = snapshot.val().point_A_address;
+
+           let isDriver = snapshot.val().is_driver;
+           userMessage(isDriver);
+
+           if (isDriver == true) {
+             $("#link-drive").show();
+
+           } else {
+              $("#link-drive").hide();
+           }
+
+           return;
+
+         }
+
          //userMessage("Ride request in progress: " + key);
          mRequestInProgress = true;
+         mRideRequestRef = snapshot.val().rideRequestKey;
 
          //disable request button
          mLocationButton.disabled = true;
@@ -435,12 +468,12 @@ function initAuth() {
         return;
       }
 
-      let rideRequestRef = firebase.database().ref("/ride-requests/").push();
+      mRideRequestRef = firebase.database().ref("/ride-requests/").push();
       let updates = {};
 
       let departureTime = new Date();
 
-      updates["/ride-requests/" + rideRequestRef.key] = {
+      updates["/ride-requests/" + mRideRequestRef.key] = {
          rider_uid: mUser.uid,
          //user_name: user.displayName,
          status: "Ready",
@@ -455,7 +488,7 @@ function initAuth() {
 
       updates["/ride-requests-by-user/" + mUser.uid] = {
          status: "Ready",
-         rideRequestKey: rideRequestRef.key,
+         rideRequestKey: mRideRequestRef.key,
          // user_name: user.displayName,
          startedAt: firebase.database.ServerValue.TIMESTAMP,
          // request_date: document.getElementById("date").value,
@@ -466,7 +499,7 @@ function initAuth() {
          // point_B_address: document.getElementById("destination").value,
       };
 
-      updates["/ride-control/" + mUser.uid + "/current_request"] = rideRequestRef.key;
+      updates["/ride-control/" + mUser.uid + "/current_request"] = mRideRequestRef.key;
       updates["/ride-control/" + mUser.uid + "/status"] = "Ready";
       updates["/ride-control/" + mUser.uid + "/ready_at"] =
          firebase.database.ServerValue.TIMESTAMP;
@@ -484,11 +517,32 @@ function initAuth() {
 
    btnCancel.addEventListener('click', e => {
 
-    
+      if (mRideRequestRef == null) {
+         userMessage("No request to cancel.");
+         return;
+      }
+
+      let updates = {};
+
+      updates["/ride-requests/" + mRideRequestRef.key + "/status"] = "Canceled";
+
+      updates["/ride-requests/" + mRideRequestRef.key + "/canceled_at"] =
+         firebase.database.ServerValue.TIMESTAMP;
+
+      updates["/ride-requests-by-user/" + mUser.uid + "/status"] = "Canceled";
+
+      updates["/ride-requests-by-user/" + mUser.uid + "/rideRequestKey"] = null;
+
+      updates["/ride-requests-by-user/" + mUser.uid + "/canceled_at"] =
+         firebase.database.ServerValue.TIMESTAMP;
+
+      updates["/ride-control/" + mUser.uid] = null;
+
+      let result = firebase.database().ref().update(updates);
+
+      userMessage("Request record canceled!");
 
    });
-
-
 
 }
 
