@@ -32,7 +32,51 @@ firebase.initializeApp(firebaseConfig);
 firebase.analytics();
 
 function initApp() {
-   initMap();
+
+   let zoom = 11;
+   if (mUserLat == null || mUserLng == null ) {
+     mUserLat = 38.2451723695606;
+     mUserLng = -104.73386842314846;
+     zoom = 9;
+   }
+
+   mMap = new google.maps.Map(document.getElementById("map"), {
+      streetViewControl: false,
+      fullscreenControl: false,
+      mapTypeControl: false,
+      gestureHandling: "cooperative",
+      center: {lat: mUserLat, lng: mUserLng },
+      zoom: zoom,
+      // restriction: {
+      //    latLngBounds: SERVICE_AREA_BOUNDS,
+      //    strictBounds: false,
+      // }
+   });
+
+   mLocationButton = document.createElement("button");
+
+   mLocationButton.textContent = "Current Location";
+   mLocationButton.id = "button-location";
+   mLocationButton.classList.add("custom-map-control-button");
+   mMap.controls[google.maps.ControlPosition.TOP_RIGHT].push(mLocationButton);
+
+   mLocationButton.addEventListener("click", () => {
+      requestLocation();
+   });
+
+   mDirectionsService = new google.maps.DirectionsService();
+
+   let markerOptions = {
+      visible: false,
+   };
+
+   mDirectionsRenderer = new google.maps.DirectionsRenderer({
+      //panel: directionsPanel,
+      markerOptions: markerOptions,
+      draggable: false,
+      map: mMap,
+   });
+
    initAuth();
 
    const pickupAddressField = document.getElementById("pickup");
@@ -333,53 +377,6 @@ function geoCodeMarker(addressField, atLatLng) {
         userMessage(status);
 
       }
-   });
-
-}
-
-function initMap() {
-   let zoom = 11;
-   if (mUserLat == null || mUserLng == null ) {
-     mUserLat = 38.2451723695606;
-     mUserLng = -104.73386842314846;
-     zoom = 9;
-   }
-
-   mMap = new google.maps.Map(document.getElementById("map"), {
-      streetViewControl: false,
-      fullscreenControl: false,
-      mapTypeControl: false,
-      gestureHandling: "cooperative",
-      center: {lat: mUserLat, lng: mUserLng },
-      zoom: zoom,
-      // restriction: {
-      //    latLngBounds: SERVICE_AREA_BOUNDS,
-      //    strictBounds: false,
-      // }
-   });
-
-   mLocationButton = document.createElement("button");
-
-   mLocationButton.textContent = "Current Location";
-   mLocationButton.id = "button-location";
-   mLocationButton.classList.add("custom-map-control-button");
-   mMap.controls[google.maps.ControlPosition.TOP_RIGHT].push(mLocationButton);
-
-   mLocationButton.addEventListener("click", () => {
-      requestLocation();
-   });
-
-   mDirectionsService = new google.maps.DirectionsService();
-
-   let markerOptions = {
-      visible: false,
-   };
-
-   mDirectionsRenderer = new google.maps.DirectionsRenderer({
-      //panel: directionsPanel,
-      markerOptions: markerOptions,
-      draggable: false,
-      map: mMap,
    });
 
 }
