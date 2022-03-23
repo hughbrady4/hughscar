@@ -122,6 +122,29 @@ function initApp() {
    });
 }
 
+function requestLocation() {
+  if (navigator.geolocation) {
+     navigator.geolocation.getCurrentPosition((position) => {
+        mUserLat = position.coords.latitude;
+        mUserLng = position.coords.longitude;
+        console.log(mUserLat);
+        console.log(mUserLng);
+
+        //if map is initialized, then set pickup marker
+        if (mMap != null) {
+
+           //setPickupMarker({lat: mUserLat, lng: mUserLng }, true);
+         }
+         //addUserMarker({lat: mUserLat, lng: mUserLng });
+      }, (error) => {
+         userMessage("Failed to get geolocation from browser");
+         console.log(error.message);
+      });
+   } else {
+      userMessage("Failed to get geolocation from browser");
+   }
+}
+
 function handleLocationError(browserHasGeolocation, infoWindow, pos) {
   infoWindow.setPosition(pos);
   infoWindow.setContent(
