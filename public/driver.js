@@ -34,8 +34,8 @@ function initApp() {
       },
       signInFlow: 'popup',
       signInOptions: [
-         firebase.auth.EmailAuthProvider.PROVIDER_ID,
-         firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+         // firebase.auth.EmailAuthProvider.PROVIDER_ID,
+         // firebase.auth.GoogleAuthProvider.PROVIDER_ID,
          firebase.auth.PhoneAuthProvider.PROVIDER_ID
       ],
       //tosUrl: '<your-tos-url>',
@@ -406,7 +406,7 @@ function loadDrivers() {
 
    }
 
-function requestLocation(myMap) {
+function requestLocation1(myMap) {
    if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
          const pos = {
@@ -525,4 +525,16 @@ function errorMessage(message) {
 
    // After 3 seconds, remove the show class from DIV
    setTimeout(function(){ sb.className = sb.className.replace("show", ""); }, 3000);
+}
+
+function userMessage(message) {
+   // Get the snackbar DIV
+   let sb = document.getElementById("snackbar");
+   sb.innerHTML = message;
+   console.log(message);
+   // Add the "show" class to DIV
+   sb.classList.add("show");
+
+   // After 3 seconds, remove the show class from DIV
+   setTimeout(function(){ sb.classList.remove("show"); }, 3000);
 }

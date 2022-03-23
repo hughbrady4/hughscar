@@ -17,6 +17,7 @@ const SERVICE_AREA_BOUNDS = {
 };
 
 let mMap;
+let mState;
 let mUserLat;
 let mUserLng;
 let mPickupMarker;
@@ -94,6 +95,7 @@ function initApp() {
             if (results[0]) {
                console.log(results[0]);
                pickupAddressField.value = results[0].formatted_address;
+
                setPickupMarker(results[0].geometry.location, false);
             }
          } else {
@@ -137,6 +139,8 @@ function initAuth() {
          document.getElementById('firebaseui-auth-container').classList.remove("show");
          userMessage("You are logged in.");
          $("#link-signOut").show();
+         $("#transportservice-content-container").show();
+
          name = user.displayName;
          email = user.email;
          photoUrl = user.photoURL;
@@ -151,8 +155,9 @@ function initAuth() {
          // $("#profile-email").text(email);
          // $("#profile-card").show();
 
-         getRideRequests();
-         getDrivers();
+         getUserStateRecord();
+         getDriverRecord();
+         //getDrivers();
 
       } else {
          document.getElementById('firebaseui-auth-container').classList.add("show");
@@ -160,6 +165,7 @@ function initAuth() {
 
          $("#link-signOut").hide();
          $("#btn-request").hide();
+         $("#transportservice-content-container").hide();
          // photoUrl = "blank-profile-picture-973460_640.png";
          // $("#profile-picture").attr("src", photoUrl);
 
@@ -266,81 +272,133 @@ function initAuth() {
 
 }
 
-function getRideRequests() {
+function getDriverRecord() {
 
-   let rideControlRecord = firebase.database().ref("/ride-requests-by-user/")
+   let driverRecord = firebase.database().ref("/drivers/")
                       .child(mUser.uid);
+
+   driverRecord.on('value', (snapshot) => {
+      console.log(snapshot.val());
+      if (snapshot.exists()) {
+         $("#link-drive").show();
+         //$("#col-drive").css("display", "inline");
+      } else {
+         $("#link-drive").hide();
+         //$("#col-drive").css("display", "none");
+
+      }
+   });
+
+ }
+
+
+function getUserStateRecord() {
+
+   let controlRecord = firebase.database().ref("/ride-requests-by-user/")
+                      .child(mUser.uid).child("status");
 
    // rideControlRecord.on('child_added', (snapshot) => {
 
-   rideControlRecord.get().then((snapshot) => {
+   controlRecord.on('value', (snapshot) => {
+
+      console.log(snapshot.val());
 
       if (snapshot.exists()) {
-         let key = snapshot.key;
-
-
-         console.log(snapshot.val().status);
-
-         let status = snapshot.val().status;
-
-         if (status == "Canceled") {
-           mRequestInProgress = false;
-           mRideRequestRef = null;
-           mLocationButton.disabled = false;
-           setPickupMarker(snapshot.val().point_A);
-           mPickupMarker.draggable = true;
-           document.getElementById("btn-request").disabled = false;
-           $("#btn-request").show();
-           document.getElementById("pickup").readOnly = false;
-           document.getElementById("pickup").value = snapshot.val().point_A_address;
-
-           let isDriver = snapshot.val().is_driver;
-           userMessage(isDriver);
-
-           if (isDriver == true) {
-             $("#link-drive").show();
-
-           } else {
-              $("#link-drive").hide();
-           }
-
-           return;
+         mState = snapshot.val();
+         //pending request exists
+         if (mState == "Pending") {
 
          }
 
-         //userMessage("Ride request in progress: " + key);
-         mRequestInProgress = true;
-         mRideRequestRef = snapshot.val().rideRequestKey;
-
-         //disable request button
-         mLocationButton.disabled = true;
-         setPickupMarker(snapshot.val().point_A);
-         mPickupMarker.draggable = false;
-         document.getElementById("btn-request").disabled = true;
-         $("#btn-request").hide();
-         document.getElementById("pickup").readOnly = true;
-         document.getElementById("pickup").value = snapshot.val().point_A_address;
-
-
-         let isDriver = snapshot.val().is_driver;
-         userMessage(isDriver);
-
-         if (isDriver == true) {
-           $("#link-drive").show();
-
-         } else {
-            $("#link-drive").hide();
-         }
       } else {
-         //if (mRequestInProgress == false) {
          requestLocation();
-         //}
       }
 
-   }).catch((error) => {
-      userMessage(error);
    });
 
+}
+
+function getUserRecord() {
+
+   let rideControlRecord = firebase.database().ref("/ride-requests-by-user/")
+                      .child(mUser.uid).child("status");
+
+   // rideControlRecord.on('child_added', (snapshot) => {
+
+   rideControlRecord.on('value', (snapshot) => {
+
+
+      if (snapshot.exists()) {
+
+         let stateChange = false;
+
+         if (mState != snapshot.val().status) {
+            mState =  snapshot.val().status;
+            stateChange = true;
+         }
+
+         let key = snapshot.key;
+         console.log(snapshot.val().status);
+
+         // let status = snapshot.val().status;
+         if (stateChange == true) {
+
+            if (mState == "Canceled") {
+
+               mRequestInProgress = false;
+               mRideRequestRef = null;
+               mLocationButton.disabled = false;
+               setPickupMarker(snapshot.val().point_A);
+               mPickupMarker.draggable = true;
+               document.getElementById("btn-request").disabled = false;
+               $("#btn-request").show();
+               document.getElementById("pickup").readOnly = false;
+               document.getElementById("pickup").value = snapshot.val().point_A_address;
+
+               let isDriver = snapshot.val().is_driver;
+               userMessage(isDriver);
+
+               if (isDriver == true) {
+                  $("#link-drive").show();
+               } else {
+                 $("#link-drive").hide();
+               }
+
+               return;
+            }
+         }
+
+         if (stateChange == true && mState == "Pending") {
+
+            //userMessage("Ride request in progress: " + key);
+            mRequestInProgress = true;
+            mRideRequestRef = snapshot.val().rideRequestKey;
+
+            //disable request button
+            mLocationButton.disabled = true;
+            setPickupMarker(snapshot.val().point_A);
+            mPickupMarker.draggable = false;
+            document.getElementById("btn-request").disabled = true;
+            $("#btn-request").hide();
+            document.getElementById("pickup").readOnly = true;
+            document.getElementById("pickup").value = snapshot.val().point_A_address;
+
+            let isDriver = snapshot.val().is_driver;
+            userMessage(isDriver);
+
+            if (isDriver == true) {
+               $("#link-drive").show();
+
+            } else {
+               $("#link-drive").hide();
+            }
+         }
+
+            //no user record created yet
+         } else {
+               requestLocation();
+         }
+      });
 }
 
 function getDrivers() {
@@ -414,8 +472,7 @@ function requestLocation() {
 
         //if map is initialized, then set pickup marker
         if (mMap != null) {
-           mMap.setCenter({lat: mUserLat, lng: mUserLng });
-           mMap.setZoom(13);
+
            setPickupMarker({lat: mUserLat, lng: mUserLng }, true);
          }
          //addUserMarker({lat: mUserLat, lng: mUserLng });
@@ -429,6 +486,9 @@ function requestLocation() {
 }
 
 function setPickupMarker(atLatLng, geoCode) {
+
+   mMap.setCenter(atLatLng);
+   mMap.setZoom(13);
 
    if (mPickupMarker == null) {
       mPickupMarker = new google.maps.Marker({
@@ -465,6 +525,8 @@ function setPickupMarker(atLatLng, geoCode) {
       mPickupMarker.setPosition(atLatLng);
       mPickupMarker.setMap(mMap);
    }
+
+
 
    if (geoCode) {
       geoCodeMarker(document.getElementById("pickup"), atLatLng);

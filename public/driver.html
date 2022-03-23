@@ -7,7 +7,7 @@
 
 
 <title>Hugh's Car Service</title>
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/index.css">
 
 <!-- Latest compiled and minified CSS -->
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
@@ -26,7 +26,9 @@
 <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-messaging.js"></script>
 <script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
 <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
+
 </head>
+
 
 <body>
 
@@ -43,7 +45,7 @@
 <div class="col-lg-11" style="padding:3px 3px 3px 3px;">
 
 <h3>Hugh's Car Service</h3>
-<h5>Pueblo, CO</h5>
+<!-- <h5>Pueblo, CO</h5> -->
 
 
 </div>
@@ -51,13 +53,32 @@
 </div>
 
 </div>
-
-<div id="transportservice-content-container" class="container">
 
 <!-- <div id="loader"></div> -->
 <div id="firebaseui-auth-container">
 <!-- <h3 id="signin-heading">Please sign in to request a ride</h3> -->
 </div>
+
+
+<div id="transportservice-content-container" class="container">
+
+
+  <div class="form-row" style="margin-top: 3px;">
+  <div class="col-sm-9 form-group">
+  <!-- <label for="pickup">Pickup Address</label> -->
+  <input type="text" class="form-control" id="pickup" placeholder="pickup location" name="pickup">
+  </div>
+  <div id="btn-group-online" class="col-sm-1 form-group">
+  <button id="btn-online" href="#" class="btn btn-primary">Online</button>
+  </div>
+  <div id="btn-group-offline" class="col-sm-1 form-group">
+  <button id="btn-offline" href="#" class="btn btn-primary">Offine</button>
+  </div>
+  <div id="btn-group-location" class="col-sm-1 form-group">
+  <button id="btn-location" onclick="requestLocation()" class="btn btn-primary">Location</button>
+  </div>
+  </div>
+
 
 
 <div id="map" class="map_full"></div>
