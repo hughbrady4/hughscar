@@ -79,47 +79,7 @@ function initApp() {
      // }
    });
 
-   mInfoWindow = new google.maps.InfoWindow();
 
-   const goButton = document.createElement("button");
-   goButton.textContent = "Go Online";
-   goButton.classList.add("custom-map-control-button");
-   mMap.controls[google.maps.ControlPosition.TOP_CENTER].push(goButton);
-   goButton.addEventListener("click", () => {
-
-      if (navigator.geolocation) {
-         navigator.geolocation.getCurrentPosition((position) => {
-            mDriverLat = position.coords.latitude;
-            mDriverLng = position.coords.longitude;
-
-            // let rideRequest = snapshot.val();
-            // let userData = snapshot.val();
-            // data.status = "accepted";
-
-            let driver = {
-               last_loc: {lat: mDriverLat, lng: mDriverLng },
-               status: "online",
-            };
-
-            let driverRef = firebase.database().ref("drivers/" + firebase.auth().currentUser.uid);
-            driverRef.set(driver);
-
-           // let updates = {};
-           // updates["/ride-requests/" + snapshot.key + "/status"] = "accepted";
-           // updates["/ride-requests-by-user/" + user.uid + "/" + snapshot.key + "/status"] = "accepted";
-           // updates["/ride-control/" + rideRequest.rider_uid + "/" + snapshot.key + "/status"] = "accepted";
-           //
-           // firebase.database().ref().update(updates);
-
-         }, (error) => {
-            errorMessage("Geolocation required to accept rides");
-            console.log(error.message);
-         });
-
-      } else {
-         errorMessage("Geolocation required to accept rides");
-      }
-   });
 }
 
 function requestLocation() {
@@ -130,10 +90,32 @@ function requestLocation() {
         console.log(mUserLat);
         console.log(mUserLng);
 
+        mDriverLat = position.coords.latitude;
+        mDriverLng = position.coords.longitude;
+
+        // let rideRequest = snapshot.val();
+        // let userData = snapshot.val();
+        // data.status = "accepted";
+
+        let driver = {
+           last_loc: {lat: mDriverLat, lng: mDriverLng },
+           status: "online",
+        };
+
+        let driverRef = firebase.database().ref("drivers/" + firebase.auth().currentUser.uid);
+        driverRef.set(driver);
+
+       // let updates = {};
+       // updates["/ride-requests/" + snapshot.key + "/status"] = "accepted";
+       // updates["/ride-requests-by-user/" + user.uid + "/" + snapshot.key + "/status"] = "accepted";
+       // updates["/ride-control/" + rideRequest.rider_uid + "/" + snapshot.key + "/status"] = "accepted";
+       //
+       // firebase.database().ref().update(updates);
+
         //if map is initialized, then set pickup marker
         if (mMap != null) {
 
-           //setPickupMarker({lat: mUserLat, lng: mUserLng }, true);
+           // setPickupMarker({lat: mUserLat, lng: mUserLng }, true);
          }
          //addUserMarker({lat: mUserLat, lng: mUserLng });
       }, (error) => {
@@ -145,15 +127,6 @@ function requestLocation() {
    }
 }
 
-function handleLocationError(browserHasGeolocation, infoWindow, pos) {
-  infoWindow.setPosition(pos);
-  infoWindow.setContent(
-    browserHasGeolocation
-      ? "Error: The Geolocation service failed."
-      : "Error: Your browser doesn't support geolocation."
-  );
-  infoWindow.open(map);
-}
 
 function getDriverControl() {
 
