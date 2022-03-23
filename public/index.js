@@ -291,7 +291,6 @@ function getDriverRecord() {
 
  }
 
-
 function getUserStateRecord() {
 
    let controlRecord = firebase.database().ref("/ride-requests-by-user/")
