@@ -429,7 +429,7 @@ function requestLocation() {
         riderRef.set(rider);
 
 
-
+        geoCodeCoordinates({lat: mUserLat, lng: mUserLng});
         //if map is initialized, then set pickup marker
         // if (mMap != null) {
         //
@@ -470,7 +470,16 @@ function setPickupMarker(atLatLng) {
       });
       mPickupMarker.addListener("dragend", (event) => {
          //addressField.value = marker.getPosition();
-         geoCodeMarker(document.getElementById("pickup"), mPickupMarker.getPosition());
+         let rider = {
+            updated: firebase.database.ServerValue.TIMESTAMP,
+            last_loc: {lat: mUserLat, lng: mUserLng },
+            status: "ready",
+         };
+
+         let riderRef = firebase.database()
+            .ref("/riders").child(firebase.auth().currentUser.uid);
+         riderRef.set(rider);
+         geoCodeCoordinates(mPickupMarker.getPosition());
          //routePickup();
       });
 
@@ -543,7 +552,7 @@ function routePickup() {
    }
 }
 
-function geoCodeMarker(addressField, atLatLng) {
+function geoCodeCoordinates(atLatLng) {
    let geoCoder = new google.maps.Geocoder();
 
    //console.log(addressField);
@@ -553,9 +562,20 @@ function geoCodeMarker(addressField, atLatLng) {
       if (status === "OK") {
          if (results[0]) {
             //console.log(addressField);
-            addressField.value = results[0].formatted_address;
+            //addressField.value = results[0].formatted_address;
+            let location = {
+               updated: firebase.database.ServerValue.TIMESTAMP,
+               last_loc: {lat: mUserLat, lng: mUserLng },
+               formatted_address: results[0].formatted_address,
+               status: "ready",
+            };
+
+            let riderRef = firebase.database()
+               .ref("/riders").child(firebase.auth().currentUser.uid)
+               .child("formatted_address");
+            riderRef.set(results[0].formatted_address);
          } else {
-            addressField.value = null;
+            //addressField.value = null;
          }
       } else {
         userMessage(status);
