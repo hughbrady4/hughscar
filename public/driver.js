@@ -50,7 +50,8 @@ function initApp() {
          authContainer.classList.remove("show");
          // let mainContainer = document.getElementById('main_content');
          // mainContainer.classList.add("show");
-         getDriverControl();
+         getDriverLocation();
+         getDriverStatus();
       } else {
          // let mainContainer = document.getElementById('main_content');
          // mainContainer.classList.remove("show");
@@ -82,37 +83,29 @@ function initApp() {
 
 function goOnline() {
 
-   if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-         mUserLat = position.coords.latitude;
-         mUserLng = position.coords.longitude;
-         console.log(mUserLat);
-         console.log(mUserLng);
+   let driver = {
+      updated: firebase.database.ServerValue.TIMESTAMP,
+      last_loc: {lat: mUserLat, lng: mUserLng },
+      status: "online",
+   };
 
-         let driver = {
-            startedAt: firebase.database.ServerValue.TIMESTAMP,
-            last_loc: {lat: mUserLat, lng: mUserLng },
-            status: "online",
-         };
+   let driverRef = firebase.database()
+      .ref("drivers/" + firebase.auth().currentUser.uid);
+   driverRef.set(driver);
 
-         let driverRef = firebase.database()
-            .ref("drivers/" + firebase.auth().currentUser.uid);
-         driverRef.set(driver);
-
-      }, (error) => {
-         userMessage("Failed to get geolocation from browser");
-         console.log(error.message);
-      });
-   } else {
-    userMessage("Failed to get geolocation from browser");
-   }
 }
 
 function goOffline() {
 
+   let driver = {
+      updated: firebase.database.ServerValue.TIMESTAMP,
+      last_loc: {lat: mUserLat, lng: mUserLng },
+      status: "offline",
+   };
+
    let driverRef = firebase.database()
-      .ref("drivers/" + firebase.auth().currentUser.uid).child("status/");
-   driverRef.set("offline");
+      .ref("drivers/" + firebase.auth().currentUser.uid);
+   driverRef.set(driver);
 
 }
 
@@ -121,38 +114,13 @@ function requestLocation() {
      navigator.geolocation.getCurrentPosition((position) => {
         mUserLat = position.coords.latitude;
         mUserLng = position.coords.longitude;
-        console.log(mUserLat);
-        console.log(mUserLng);
-
-        // mDriverLat = position.coords.latitude;
-        // mDriverLng = position.coords.longitude;
-
-        // let rideRequest = snapshot.val();
-        // let userData = snapshot.val();
-        // data.status = "accepted";
-
-        // let driver = {
-        //    last_loc: {lat: mDriverLat, lng: mDriverLng },
-        //    status: "online",
-        // };
+        //console.log(mUserLat);
+        //console.log(mUserLng);
 
         let driverRef = firebase.database()
            .ref("drivers/" + firebase.auth().currentUser.uid).child("last_loc");
         driverRef.set({lat: mUserLat, lng: mUserLng });
 
-       // let updates = {};
-       // updates["/ride-requests/" + snapshot.key + "/status"] = "accepted";
-       // updates["/ride-requests-by-user/" + user.uid + "/" + snapshot.key + "/status"] = "accepted";
-       // updates["/ride-control/" + rideRequest.rider_uid + "/" + snapshot.key + "/status"] = "accepted";
-       //
-       // firebase.database().ref().update(updates);
-
-        //if map is initialized, then set pickup marker
-        if (mMap != null) {
-
-           // setPickupMarker({lat: mUserLat, lng: mUserLng }, true);
-         }
-         //addUserMarker({lat: mUserLat, lng: mUserLng });
       }, (error) => {
          userMessage("Failed to get geolocation from browser");
          console.log(error.message);
@@ -187,22 +155,13 @@ function setDriverMarker(atLatLng) {
          //mDriverMarker.setLabel("A");
       });
       mDriverMarker.addListener("dragend", (event) => {
-         //addressField.value = marker.getPosition();
-         //geoCodeMarker(document.getElementById("pickup"), mDriverMarker.getPosition());
-         //routePickup();
+
          mUserLat = mDriverMarker.getPosition().lat();
          mUserLng = mDriverMarker.getPosition().lng();
-         //console.log(lat + ", " + lng);
          let driverRef = firebase.database()
             .ref("/drivers").child(mUser.uid).child("last_loc");
          driverRef.set({lat: mUserLat, lng: mUserLng });
       });
-
-      // mDriverMarker.addListener("position_changed", (event) => {
-      //    routePickup();
-      //
-      // });
-
 
 
    } else {
@@ -210,17 +169,9 @@ function setDriverMarker(atLatLng) {
       //mDriverMarker.setMap(mMap);
    }
 
-
-
-   // if (geoCode) {
-   //    geoCodeMarker(document.getElementById("pickup"), atLatLng);
-   // }
-
-   //routePickup();
-
 }
 
-function getDriverControl() {
+function getDriverLocation() {
 
    let driverControlRecord = firebase.database().ref("/drivers")
                       .child(mUser.uid).child("last_loc");
@@ -243,6 +194,55 @@ function getDriverControl() {
    });
 
 }
+
+function getDriverStatus() {
+
+   let driverStatusRecord = firebase.database().ref("/drivers")
+                     .child(mUser.uid).child("status");
+
+   driverStatusRecord.on('value', (snapshot) => {
+      if (snapshot.exists()) {
+         mStatus = snapshot.val();
+         console.log(mStatus);
+         if (mStatus == null) {
+            $("#btn-group-offline").hide();
+            $("#btn-group-online").show();
+
+         } else if (mStatus == "online") {
+            $("#btn-group-offline").show();
+            $("#btn-group-online").hide();
+         } else if (mStatus == "offline") {
+            $("#btn-group-online").show();
+            $("#btn-group-offline").hide();
+         } else {
+            $("#btn-group-offline").show();
+            $("#btn-group-online").show();
+         }
+      }
+   });
+}
+
+
+function getRiders() {
+
+   let riders = firebase.database()
+      .ref("/riders/");
+
+      // .orderByChild("status")
+      // .equalTo("open")
+      // .limitToFirst(1);
+
+   riders.on('child_added', (snapshot) => {
+      console.log(snapshot.key);
+      displayRequest(snapshot);
+   });
+
+   openRequests.on('child_removed', (snapshot) => {
+
+   });
+
+}
+
 
 function displayRequest(snapshot) {
 
@@ -342,41 +342,6 @@ function clearRoute() {
       directionsArr[i].setMap(null);
    }
    directionsArr.length = 0;
-
-}
-
-function readPendingRequests() {
-   let user = firebase.auth().currentUser;
-   if (!user) {
-      errorMessage("Login required to request pickup");
-      return;
-   }
-
-   //let openRequests = firebase.database().ref("/ride-requests/");
-
-   // openRequests.once('value').then((snapshot) => {
-   //    if (snapshot.val()) {
-   //
-   //    } else {
-   //
-   //    }
-   // });
-
-   let openRequests = firebase.database()
-      .ref("/ride-requests/")
-      .orderByChild("status")
-      .equalTo("open")
-      .limitToFirst(1);
-
-
-   openRequests.on('child_added', (snapshot) => {
-      console.log(snapshot.key);
-      displayRequest(snapshot);
-   });
-
-   openRequests.on('child_removed', (snapshot) => {
-
-   });
 
 }
 

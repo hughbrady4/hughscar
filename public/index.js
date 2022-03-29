@@ -138,15 +138,7 @@ function initAuth() {
          email = user.email;
          photoUrl = user.photoURL;
          emailVerified = user.emailVerified;
-         uid = user.uid;  // The user's ID, unique to the Firebase project. Do NOT use
-                      // this value to authenticate with your backend server, if
-                      // you have one. Use User.getToken() instead.
-         // console.log("  Name: " + name);
-         // console.log("  Url: " + photoUrl);
-         // $("#profile-picture").attr("src", photoUrl);
-         // $("#profile-name").text(name);
-         // $("#profile-email").text(email);
-         // $("#profile-card").show();
+         uid = user.uid;
 
          getUserStateRecord();
          getDriverRecord();
@@ -178,92 +170,28 @@ function initAuth() {
 
    });
 
-   const linkRequest = document.getElementById('btn-request');
+}
 
-   linkRequest.addEventListener('click', e => {
+function requestRide() {
 
-      if (mPickupMarker == null) {
-        userMessage("Pickup location is not set.");
-        return;
-      }
-
-      mRideRequestRef = firebase.database().ref("/ride-requests/").push();
-      let updates = {};
-
-      let departureTime = new Date();
-
-      updates["/ride-requests/" + mRideRequestRef.key] = {
-         rider_uid: mUser.uid,
-         //user_name: user.displayName,
-         status: "Ready",
-         startedAt: firebase.database.ServerValue.TIMESTAMP,
-         request_date: departureTime,
-         //request_time: document.getElementById("time").value,
-         point_A: mPickupMarker.getPosition().toJSON(),
-         point_A_address: document.getElementById("pickup").value,
-         //point_B: mDestinationMarker.position.toJSON(),
-         //point_B_address: document.getElementById("destination").value,
-      };
-
-      updates["/ride-requests-by-user/" + mUser.uid] = {
-         status: "Ready",
-         rideRequestKey: mRideRequestRef.key,
-         // user_name: user.displayName,
-         startedAt: firebase.database.ServerValue.TIMESTAMP,
-         // request_date: document.getElementById("date").value,
-         // request_time: document.getElementById("time").value,
-         point_A: mPickupMarker.getPosition().toJSON(),
-         point_A_address: document.getElementById("pickup").value,
-         // point_B: mDestinationMarker.getPosition().toJSON(),
-         // point_B_address: document.getElementById("destination").value,
-      };
-
-      updates["/ride-control/" + mUser.uid + "/current_request"] = mRideRequestRef.key;
-      updates["/ride-control/" + mUser.uid + "/status"] = "Ready";
-      updates["/ride-control/" + mUser.uid + "/ready_at"] =
-         firebase.database.ServerValue.TIMESTAMP;
-
-
-      let result = firebase.database().ref().update(updates);
-
-
-      userMessage("Request record created!");
-
-   });
-
-
-   const btnCancel = document.getElementById('btn-cancel');
-
-   btnCancel.addEventListener('click', e => {
-
-      if (mRideRequestRef == null) {
-         userMessage("No request to cancel.");
-         return;
-      }
-
-      let updates = {};
-
-      updates["/ride-requests/" + mRideRequestRef.key + "/status"] = "Canceled";
-
-      updates["/ride-requests/" + mRideRequestRef.key + "/canceled_at"] =
-         firebase.database.ServerValue.TIMESTAMP;
-
-      updates["/ride-requests-by-user/" + mUser.uid + "/status"] = "Canceled";
-
-      updates["/ride-requests-by-user/" + mUser.uid + "/rideRequestKey"] = null;
-
-      updates["/ride-requests-by-user/" + mUser.uid + "/canceled_at"] =
-         firebase.database.ServerValue.TIMESTAMP;
-
-      updates["/ride-control/" + mUser.uid] = null;
-
-      let result = firebase.database().ref().update(updates);
-
-      userMessage("Request record canceled!");
-
-   });
+   let riderRef = firebase.database()
+      .ref("/riders").child(firebase.auth().currentUser.uid)
+      .child("status");
+   riderRef.set("pending");
 
 }
+
+
+function cancelRequest() {
+
+   let riderRef = firebase.database()
+      .ref("/riders").child(firebase.auth().currentUser.uid)
+      .child("status");
+   riderRef.set("ready");
+
+}
+
+
 
 function getDriverRecord() {
 
@@ -298,11 +226,11 @@ function getUserStateRecord() {
       if (snapshot.exists()) {
          mState = snapshot.val();
          //pending request exists
-         if (mState == "Ready") {
+         if (mState == "ready") {
 
          }
 
-         if (mState == "Pending") {
+         if (mState == "pending") {
 
          }
 
@@ -470,6 +398,10 @@ function setPickupMarker(atLatLng) {
       });
       mPickupMarker.addListener("dragend", (event) => {
          //addressField.value = marker.getPosition();
+         let loc = mPickupMarker.getPosition();
+         mUserLat = loc.lat();
+         mUserLng = loc.lng();
+
          let rider = {
             updated: firebase.database.ServerValue.TIMESTAMP,
             last_loc: {lat: mUserLat, lng: mUserLng },
@@ -479,29 +411,14 @@ function setPickupMarker(atLatLng) {
          let riderRef = firebase.database()
             .ref("/riders").child(firebase.auth().currentUser.uid);
          riderRef.set(rider);
-         geoCodeCoordinates(mPickupMarker.getPosition());
+         geoCodeCoordinates({lat: mUserLat, lng: mUserLng});
          //routePickup();
       });
-
-      // mPickupMarker.addListener("position_changed", (event) => {
-      //    routePickup();
-      //
-      // });
-
-
 
    } else {
       mPickupMarker.setPosition(atLatLng);
       mPickupMarker.setMap(mMap);
    }
-
-
-
-   // if (geoCode) {
-   //    geoCodeMarker(document.getElementById("pickup"), atLatLng);
-   // }
-
-   //routePickup();
 
 }
 
@@ -555,21 +472,9 @@ function routePickup() {
 function geoCodeCoordinates(atLatLng) {
    let geoCoder = new google.maps.Geocoder();
 
-   //console.log(addressField);
-   //console.log(atLatLng);
-
    geoCoder.geocode({ location: atLatLng }, (results, status) => {
       if (status === "OK") {
          if (results[0]) {
-            //console.log(addressField);
-            //addressField.value = results[0].formatted_address;
-            let location = {
-               updated: firebase.database.ServerValue.TIMESTAMP,
-               last_loc: {lat: mUserLat, lng: mUserLng },
-               formatted_address: results[0].formatted_address,
-               status: "ready",
-            };
-
             let riderRef = firebase.database()
                .ref("/riders").child(firebase.auth().currentUser.uid)
                .child("formatted_address");
