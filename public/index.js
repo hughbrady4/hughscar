@@ -48,21 +48,6 @@ function initApp() {
       gestureHandling: "cooperative",
       center: {lat: mUserLat, lng: mUserLng },
       zoom: zoom,
-      // restriction: {
-      //    latLngBounds: SERVICE_AREA_BOUNDS,
-      //    strictBounds: false,
-      // }
-   });
-
-   mLocationButton = document.createElement("button");
-
-   mLocationButton.textContent = "Current Location";
-   mLocationButton.id = "button-location";
-   mLocationButton.classList.add("custom-map-control-button");
-   mMap.controls[google.maps.ControlPosition.TOP_RIGHT].push(mLocationButton);
-
-   mLocationButton.addEventListener("click", () => {
-      requestLocation();
    });
 
    mDirectionsService = new google.maps.DirectionsService();
@@ -93,10 +78,25 @@ function initApp() {
       geoCoder.geocode({ address: address }, (results, status) => {
          if (status === "OK") {
             if (results[0]) {
-               console.log(results[0]);
-               pickupAddressField.value = results[0].formatted_address;
+               console.log(results[0].geometry.location);
+               let loc = results[0].geometry.location;
+               mUserLat = loc.lat();
+               mUserLng = loc.lng();
 
-               setPickupMarker(results[0].geometry.location, false);
+               //pickupAddressField.value = results[0].formatted_address;
+
+               let location = {
+                  updated: firebase.database.ServerValue.TIMESTAMP,
+                  last_loc: {lat: mUserLat, lng: mUserLng },
+                  formatted_address: results[0].formatted_address,
+                  status: "ready",
+               };
+
+               let riderRef = firebase.database()
+                  .ref("/riders").child(firebase.auth().currentUser.uid);
+               riderRef.set(location);
+
+               //setPickupMarker(results[0].geometry.location, false);
             }
          } else {
             userMessage(status);
@@ -305,14 +305,53 @@ function getUserStateRecord() {
       if (snapshot.exists()) {
          mState = snapshot.val();
          //pending request exists
+         if (mState == "Ready") {
+
+         }
+
          if (mState == "Pending") {
 
          }
 
       } else {
-         requestLocation();
+
+
+         // getDrivers();
       }
 
+   });
+
+
+   let riderLocRecord = firebase.database().ref("/riders")
+                      .child(mUser.uid).child("last_loc");
+
+   riderLocRecord.on('value', (snapshot) => {
+      if (snapshot.exists()) {
+         // console.log(snapshot.val());
+         let newLoc = snapshot.val();
+         if (mPickupMarker != null) {
+            let oldLoc = mPickupMarker.getPosition();
+
+            if (newLoc.lat != oldLoc.lat() || newLoc.lng != oldLoc.lng()) {
+               setPickupMarker(newLoc);
+            }
+         } else {
+           setPickupMarker(newLoc);
+         }
+
+      }
+   });
+
+   let riderAddressRecord = firebase.database().ref("/riders")
+                      .child(mUser.uid).child("formatted_address");
+
+   riderAddressRecord.on('value', (snapshot) => {
+      if (snapshot.exists()) {
+         // console.log(snapshot.val());
+         let newAddress = snapshot.val();
+         document.getElementById("pickup").value = newAddress;
+
+      }
    });
 
 }
@@ -347,7 +386,7 @@ function getUserRecord() {
                mRequestInProgress = false;
                mRideRequestRef = null;
                mLocationButton.disabled = false;
-               setPickupMarker(snapshot.val().point_A);
+               // setPickupMarker(snapshot.val().point_A);
                mPickupMarker.draggable = true;
                document.getElementById("btn-request").disabled = false;
                $("#btn-request").show();
@@ -375,7 +414,7 @@ function getUserRecord() {
 
             //disable request button
             mLocationButton.disabled = true;
-            setPickupMarker(snapshot.val().point_A);
+            // setPickupMarker(snapshot.val().point_A);
             mPickupMarker.draggable = false;
             document.getElementById("btn-request").disabled = true;
             $("#btn-request").hide();
@@ -423,7 +462,7 @@ function getDrivers() {
          });
 
          mDrivers.set(key, mDriverMarker);
-         routePickup();
+         //routePickup();
       }
    });
 
@@ -438,7 +477,7 @@ function getDrivers() {
          let marker = mDrivers.get(key);
          marker.setPosition(driverLoc);
 
-         routePickup();
+         //routePickup();
       }
    });
 
@@ -455,7 +494,7 @@ function getDrivers() {
          marker.setMap(null);
          mDrivers.delete(key);
 
-         routePickup();
+         //routePickup();
       }
    });
 
@@ -469,11 +508,23 @@ function requestLocation() {
         console.log(mUserLat);
         console.log(mUserLng);
 
-        //if map is initialized, then set pickup marker
-        if (mMap != null) {
+        let rider = {
+           updated: firebase.database.ServerValue.TIMESTAMP,
+           last_loc: {lat: mUserLat, lng: mUserLng },
+           status: "ready",
+        };
 
-           setPickupMarker({lat: mUserLat, lng: mUserLng }, true);
-         }
+        let riderRef = firebase.database()
+           .ref("/riders").child(firebase.auth().currentUser.uid);
+        riderRef.set(rider);
+
+
+
+        //if map is initialized, then set pickup marker
+        // if (mMap != null) {
+        //
+        //    setPickupMarker({lat: mUserLat, lng: mUserLng }, true);
+        //  }
          //addUserMarker({lat: mUserLat, lng: mUserLng });
       }, (error) => {
          userMessage("Failed to get geolocation from browser");
@@ -484,7 +535,7 @@ function requestLocation() {
    }
 }
 
-function setPickupMarker(atLatLng, geoCode) {
+function setPickupMarker(atLatLng) {
 
    mMap.setCenter(atLatLng);
    mMap.setZoom(13);
@@ -510,7 +561,7 @@ function setPickupMarker(atLatLng, geoCode) {
       mPickupMarker.addListener("dragend", (event) => {
          //addressField.value = marker.getPosition();
          geoCodeMarker(document.getElementById("pickup"), mPickupMarker.getPosition());
-         routePickup();
+         //routePickup();
       });
 
       // mPickupMarker.addListener("position_changed", (event) => {
@@ -527,11 +578,11 @@ function setPickupMarker(atLatLng, geoCode) {
 
 
 
-   if (geoCode) {
-      geoCodeMarker(document.getElementById("pickup"), atLatLng);
-   }
+   // if (geoCode) {
+   //    geoCodeMarker(document.getElementById("pickup"), atLatLng);
+   // }
 
-   routePickup();
+   //routePickup();
 
 }
 

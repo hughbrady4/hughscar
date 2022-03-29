@@ -15,6 +15,7 @@ firebase.initializeApp(firebaseConfig);
 firebase.analytics();
 
 let mMap;
+let mDriverMarker;
 let mInfoWindow;
 let mUser;
 let mUserLat;
@@ -73,12 +74,45 @@ function initApp() {
       gestureHandling: "cooperative",
       center: {lat: mUserLat, lng: mUserLng },
       zoom: zoom,
-     // restriction: {
-     //    latLngBounds: SERVICE_AREA_BOUNDS,
-     //    strictBounds: false,
-     // }
+
    });
 
+
+}
+
+function goOnline() {
+
+   if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+         mUserLat = position.coords.latitude;
+         mUserLng = position.coords.longitude;
+         console.log(mUserLat);
+         console.log(mUserLng);
+
+         let driver = {
+            startedAt: firebase.database.ServerValue.TIMESTAMP,
+            last_loc: {lat: mUserLat, lng: mUserLng },
+            status: "online",
+         };
+
+         let driverRef = firebase.database()
+            .ref("drivers/" + firebase.auth().currentUser.uid);
+         driverRef.set(driver);
+
+      }, (error) => {
+         userMessage("Failed to get geolocation from browser");
+         console.log(error.message);
+      });
+   } else {
+    userMessage("Failed to get geolocation from browser");
+   }
+}
+
+function goOffline() {
+
+   let driverRef = firebase.database()
+      .ref("drivers/" + firebase.auth().currentUser.uid).child("status/");
+   driverRef.set("offline");
 
 }
 
@@ -90,20 +124,21 @@ function requestLocation() {
         console.log(mUserLat);
         console.log(mUserLng);
 
-        mDriverLat = position.coords.latitude;
-        mDriverLng = position.coords.longitude;
+        // mDriverLat = position.coords.latitude;
+        // mDriverLng = position.coords.longitude;
 
         // let rideRequest = snapshot.val();
         // let userData = snapshot.val();
         // data.status = "accepted";
 
-        let driver = {
-           last_loc: {lat: mDriverLat, lng: mDriverLng },
-           status: "online",
-        };
+        // let driver = {
+        //    last_loc: {lat: mDriverLat, lng: mDriverLng },
+        //    status: "online",
+        // };
 
-        let driverRef = firebase.database().ref("drivers/" + firebase.auth().currentUser.uid);
-        driverRef.set(driver);
+        let driverRef = firebase.database()
+           .ref("drivers/" + firebase.auth().currentUser.uid).child("last_loc");
+        driverRef.set({lat: mUserLat, lng: mUserLng });
 
        // let updates = {};
        // updates["/ride-requests/" + snapshot.key + "/status"] = "accepted";
@@ -127,73 +162,83 @@ function requestLocation() {
    }
 }
 
+function setDriverMarker(atLatLng) {
+
+   mMap.setCenter(atLatLng);
+   mMap.setZoom(13);
+
+   if (mDriverMarker == null) {
+      mDriverMarker = new google.maps.Marker({
+         // label: "A",
+         //animation: google.maps.Animation.DROP,
+         draggable: true,
+         position: atLatLng,
+         icon: "/images/icons8-car-24.png",
+         map: mMap,
+      });
+
+      mDriverMarker.addListener("mouseover", (event) => {
+         //mDriverMarker.setLabel(null);
+         //mDriverMarker.setAnimation(google.maps.Animation.BOUNCE);
+      });
+
+      mDriverMarker.addListener("mouseout", (event) => {
+         //mDriverMarker.setAnimation(null);
+         //mDriverMarker.setLabel("A");
+      });
+      mDriverMarker.addListener("dragend", (event) => {
+         //addressField.value = marker.getPosition();
+         //geoCodeMarker(document.getElementById("pickup"), mDriverMarker.getPosition());
+         //routePickup();
+         mUserLat = mDriverMarker.getPosition().lat();
+         mUserLng = mDriverMarker.getPosition().lng();
+         //console.log(lat + ", " + lng);
+         let driverRef = firebase.database()
+            .ref("/drivers").child(mUser.uid).child("last_loc");
+         driverRef.set({lat: mUserLat, lng: mUserLng });
+      });
+
+      // mDriverMarker.addListener("position_changed", (event) => {
+      //    routePickup();
+      //
+      // });
+
+
+
+   } else {
+      mDriverMarker.setPosition(atLatLng);
+      //mDriverMarker.setMap(mMap);
+   }
+
+
+
+   // if (geoCode) {
+   //    geoCodeMarker(document.getElementById("pickup"), atLatLng);
+   // }
+
+   //routePickup();
+
+}
 
 function getDriverControl() {
 
-   //createUserRecord(mUser);
-
-   let rideControlData = firebase.database().ref("/control-data/")
-                      //.child(mUser.uid)
-                      //.orderByChild("status")
-                      //.equalTo("started")
-                      .limitToFirst(1);
-
-
-
-   let driverControlRecord = firebase.database().ref("/driver-control/")
-                      .child(mUser.uid);
-                      //.equalTo("started")
-                      //.limitToFirst(1);
+   let driverControlRecord = firebase.database().ref("/drivers")
+                      .child(mUser.uid).child("last_loc");
 
    driverControlRecord.on('value', (snapshot) => {
-      errorMessage("Oh");
       if (snapshot.exists()) {
+         // console.log(snapshot.val());
+         let newLoc = snapshot.val();
+         if (mDriverMarker != null) {
+            let oldLoc = mDriverMarker.getPosition();
 
-         let status = snapshot.val().status;
-         console.log(snapshot);
-         // let statusField = document.getElementById("status");
-         // statusField.innerHTML = status;
-         // if (status == "New Request") {
-         //    setUI4Input();
-         // } else if (status == "Ready") {
-         //    setUI4Ready(snapshot.val().current_request);
-         // } else if (status == "canceled") {
-         //    setUI4Input(childKey, childData);
-         // } else if (status == "accepted") {
-         //    setUI4DriverInRoute(childKey);
-         // }
+            if (newLoc.lat != oldLoc.lat() || newLoc.lng != oldLoc.lng()) {
+               setDriverMarker(newLoc);
+            }
+         } else {
+           setDriverMarker(newLoc);
+         }
 
-         // snapshot.forEach((childSnapshot) => {
-         //    let childKey = childSnapshot.key;
-         //    let childData = childSnapshot.val();
-         //    console.log(childKey);
-         //    let status = childData;
-         //    console.log(status);
-         //
-         //
-         //    if (status == "New Request") {
-         //       setUI4Input(childKey, childData);
-         //    } else if (status == "Ready") {
-         //       setUI4Ready(childKey, childData);
-         //    } else if (status == "canceled") {
-         //       setUI4Input(childKey, childData);
-         //    } else if (status == "accepted") {
-         //       setUI4DriverInRoute(childKey);
-         //    }
-         //
-         //
-         //  });
-
-
-      } else {
-         let driverControlKey = firebase.database().ref("/driver-control/")
-                              .child(mUser.uid);
-
-         driverControlKey.set({
-            status: "Online",
-            startedAt: firebase.database.ServerValue.TIMESTAMP,
-         });
-         //setUI4Input(rideRequestKey);
       }
    });
 
@@ -297,16 +342,6 @@ function clearRoute() {
       directionsArr[i].setMap(null);
    }
    directionsArr.length = 0;
-
-}
-
-function initMap() {
-
-
-
-
-   // initAuth();
-
 
 }
 
