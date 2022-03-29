@@ -9,13 +9,6 @@ let firebaseConfig = {
    measurementId: "G-9MPTSJEV3K"
 };
 
-const SERVICE_AREA_BOUNDS = {
-   north: 34.23570153604349,
-   south: 31.52826999601207,
-   west: -101.33952345209524,
-   east: -92.57243360834524,
-};
-
 let mMap;
 let mState;
 let mUserLat;
