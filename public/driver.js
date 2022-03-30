@@ -15,11 +15,13 @@ firebase.initializeApp(firebaseConfig);
 firebase.analytics();
 
 let mMap;
+const mRiderQueue = new Map();
 let mDriverMarker;
 let mInfoWindow;
 let mUser;
 let mUserLat;
 let mUserLng;
+const mPickupAddressField = document.getElementById("pickup");
 
 function initApp() {
    let ui = new firebaseui.auth.AuthUI(firebase.auth());
@@ -52,6 +54,7 @@ function initApp() {
          // mainContainer.classList.add("show");
          getDriverLocation();
          getDriverStatus();
+         getRiders();
       } else {
          // let mainContainer = document.getElementById('main_content');
          // mainContainer.classList.remove("show");
@@ -77,6 +80,7 @@ function initApp() {
       zoom: zoom,
 
    });
+
 
 
 }
@@ -180,6 +184,8 @@ function getDriverLocation() {
       if (snapshot.exists()) {
          // console.log(snapshot.val());
          let newLoc = snapshot.val();
+         mUserLat = newLoc.lat;
+         mUserLng = newLoc.lng;
          if (mDriverMarker != null) {
             let oldLoc = mDriverMarker.getPosition();
 
@@ -226,22 +232,64 @@ function getDriverStatus() {
 function getRiders() {
 
    let riders = firebase.database()
-      .ref("/riders/");
-
-      // .orderByChild("status")
-      // .equalTo("open")
+      .ref("/riders")
+      .orderByChild("status")
+      .equalTo("pending");
       // .limitToFirst(1);
 
    riders.on('child_added', (snapshot) => {
       console.log(snapshot.key);
-      displayRequest(snapshot);
+      console.log(snapshot.val());
+      addRiderMarker(snapshot);
    });
 
-   openRequests.on('child_removed', (snapshot) => {
+   riders.on('child_removed', (snapshot) => {
+     console.log(snapshot.key);
+     console.log(snapshot.val());
+     removeRiderMarker(snapshot);
 
    });
 
 }
+
+function removeRiderMarker(snapshot) {
+
+   let marker = mRiderQueue.get(snapshot.key);
+   marker.setMap(null);
+   mRiderQueue.delete(snapshot.key);
+
+}
+
+function addRiderMarker(snapshot) {
+
+
+   let atLatLng = snapshot.val().last_loc;
+
+   let marker = new google.maps.Marker({
+      // label: "A",
+      //animation: google.maps.Animation.DROP,
+      draggable: false,
+      position: atLatLng,
+      //icon: "/images/icons8-car-24.png",
+      map: mMap,
+   });
+
+   mRiderQueue.set(snapshot.key, marker);
+
+   marker.addListener("click", (event) => {
+      //mDriverMarker.setLabel(null);
+      mPickupAddressField.value = snapshot.val().formatted_address;
+      //mDriverMarker.setAnimation(google.maps.Animation.BOUNCE);
+   });
+
+   marker.addListener("mouseout", (event) => {
+      //mDriverMarker.setAnimation(null);
+      //mDriverMarker.setLabel("A");
+   });
+
+}
+
+
 
 
 function displayRequest(snapshot) {
@@ -343,97 +391,6 @@ function clearRoute() {
    }
    directionsArr.length = 0;
 
-}
-
-function loadDrivers() {
-   let drivers = firebase.database().ref("driver-cur-loc");
-   drivers.on('child_added',
-      function(snapshot) {
-         // Get that click from firebase.
-         let driverRec = snapshot.val();
-         console.log(driverRec);
-         let driverLoc = new google.maps.LatLng(driverRec.lat, driverRec.lng);
-         let atTime = new Date(driverRec.timestamp);
-         console.log(atTime);
-
-         const iconBase = "https://hughscar.com/images/";
-         const icons = {
-           size_16: {
-             icon: iconBase + "icons8-car-16.png",
-           },
-           size_24: {
-             icon: iconBase + "icons8-car-24.png",
-           },
-           size_30: {
-             icon: iconBase + "icons8-car-30.png",
-           },
-           size_40: {
-             icon: iconBase + "icons8-car-40.png",
-           },
-           size_48: {
-             icon: iconBase + "icons8-car-48.png",
-           },
-           size_80: {
-             icon: iconBase + "icons8-car-80.png",
-           },
-           size_96: {
-             icon: iconBase + "icons8-car-96.png",
-           },
-         };
-
-
-         let timeString = atTime.toLocaleString();
-         const marker = new google.maps.Marker({
-            icon: icons["size_24"].icon,
-            animation: google.maps.Animation.DROP,
-            position: driverLoc,
-            map: map,
-            //label: timeString,
-         });
-         driverMarkers.push(marker);
-      });
-
-   drivers.on('child_changed',
-      function(snapshot) {
-         // Get that click from firebase.
-         let driverRec = snapshot.val();
-         console.log(driverRec);
-      });
-
-   }
-
-function requestLocation1(myMap) {
-   if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-         const pos = {
-               lat: position.coords.latitude,
-               lng: position.coords.longitude,
-         };
-
-         browserLocation = new google.maps.LatLng(pos);
-         let bounds = new google.maps.LatLngBounds(SW, NE);
-         let inArea = bounds.contains(browserLocation);
-
-         if (inArea) {
-            addUserMarker(browserLocation);
-            myMap.setCenter(browserLocation);
-            // lastZoom = myMap.getZoom();
-            // setZoomSlow(13);
-         } else {
-           errorMessage("You're current location is outside service area");
-         }
-      }, () => {
-         errorMessage("Failed to get geolocation from browser");
-         //addUserMarker();
-         //buildControls("waypoints");
-         //console.log("Failed to get geolocation from browser");
-      });
-   } else {
-      errorMessage("Failed to get geolocation from browser");
-      //addUserMarker();
-      //buildControls("waypoints");
-      //console.log("Failed to get geolocation from browser");
-   }
 }
 
 function setZoomSlow(level) {
