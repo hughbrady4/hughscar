@@ -10,7 +10,7 @@ let firebaseConfig = {
 };
 
 let mMap;
-let mState;
+let mStatus;
 let mUserLat;
 let mUserLng;
 let mPickupMarker;
@@ -20,6 +20,9 @@ let mDirectionsRenderer;
 let mLocationButton;
 let mRequestInProgress = false;
 let mRideRequestRef;
+
+const mMainHeadingField = document.getElementById("h5-main-text");
+const PICKUP_ADDRESS_FIELD = document.getElementById("pickup");
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
@@ -58,12 +61,10 @@ function initApp() {
 
    initAuth();
 
-   const pickupAddressField = document.getElementById("pickup");
-
-   pickupAddressField.addEventListener("change", () => {
+   PICKUP_ADDRESS_FIELD.addEventListener("change", () => {
 
       let geoCoder = new google.maps.Geocoder();
-      let address = pickupAddressField.value;
+      let address = PICKUP_ADDRESS_FIELD.value;
 
       console.log(address);
       //console.log(label);
@@ -76,7 +77,7 @@ function initApp() {
                mUserLat = loc.lat();
                mUserLng = loc.lng();
 
-               //pickupAddressField.value = results[0].formatted_address;
+               //PICKUP_ADDRESS_FIELD.value = results[0].formatted_address;
 
                let location = {
                   updated: firebase.database.ServerValue.TIMESTAMP,
@@ -131,7 +132,7 @@ function initAuth() {
          mUser =  user;
          document.getElementById('firebaseui-auth-container').classList.remove("show");
          userMessage("You are logged in.");
-         $("#link-signOut").show();
+         $("#btn-signout").show();
          $("#transportservice-content-container").show();
 
          name = user.displayName;
@@ -148,8 +149,8 @@ function initAuth() {
          document.getElementById('firebaseui-auth-container').classList.add("show");
          userMessage("You are logged out.");
 
-         $("#link-signOut").hide();
-         $("#btn-request").hide();
+         $("#btn-signout").hide();
+         // $("#btn-request").hide();
          $("#transportservice-content-container").hide();
          // photoUrl = "blank-profile-picture-973460_640.png";
          // $("#profile-picture").attr("src", photoUrl);
@@ -159,15 +160,6 @@ function initAuth() {
          // document.getElementById('btn-driver-maintenance').classList.remove("show");
          ui.start('#firebaseui-auth-container', uiConfig);
       }
-   });
-
-   const linksignOut = document.getElementById('link-signOut');
-
-   linksignOut.addEventListener('click', e => {
-
-      firebase.auth().signOut();
-      userMessage("GoodBye!");
-
    });
 
 }
@@ -188,6 +180,15 @@ function cancelRequest() {
       .ref("/riders").child(firebase.auth().currentUser.uid)
       .child("status");
    riderRef.set("ready");
+
+}
+
+
+function clearRecord() {
+
+   let riderRef = firebase.database()
+      .ref("/riders").child(firebase.auth().currentUser.uid);
+   riderRef.set(null);
 
 }
 
@@ -214,7 +215,7 @@ function getDriverRecord() {
 
 function getUserStateRecord() {
 
-   let controlRecord = firebase.database().ref("/ride-requests-by-user/")
+   let controlRecord = firebase.database().ref("/riders")
                       .child(mUser.uid).child("status");
 
    // rideControlRecord.on('child_added', (snapshot) => {
@@ -222,22 +223,43 @@ function getUserStateRecord() {
    controlRecord.on('value', (snapshot) => {
 
       console.log(snapshot.val());
+      mStatus = snapshot.val();
 
-      if (snapshot.exists()) {
-         mState = snapshot.val();
-         //pending request exists
-         if (mState == "ready") {
+      if (mStatus == null) {
+         $("#btn-group-cancel").hide();
+         $("#btn-group-request").hide();
+         $("#btn-group-location").show();
+         $("#btn-group-clear").hide();
 
-         }
+         PICKUP_ADDRESS_FIELD.readOnly = false;
+         mMainHeadingField.innerHTML = "Whare are you?";
 
-         if (mState == "pending") {
+      } else if (mStatus == "ready") {
+         $("#btn-group-cancel").hide();
+         $("#btn-group-request").show();
+         $("#btn-group-location").hide();
+         $("#btn-group-clear").show();
 
-         }
+         PICKUP_ADDRESS_FIELD.readOnly = false;
+         mMainHeadingField.innerHTML = "Click request button for pickup.";
+
+      } else if (mStatus == "pending") {
+         $("#btn-group-cancel").show();
+         $("#btn-group-request").hide();
+         $("#btn-group-location").hide();
+         $("#btn-group-clear").hide();
+
+         PICKUP_ADDRESS_FIELD.readOnly = true;
+         mMainHeadingField.innerHTML = "You're pickup request is pending.";
 
       } else {
+         $("#btn-group-cancel").hide();
+         $("#btn-group-request").hide();
+         $("#btn-group-location").hide();
+         $("#btn-group-clear").hide();
+         PICKUP_ADDRESS_FIELD.readOnly = true;
+         mMainHeadingField.innerHTML = "Oops, something went wrong.";
 
-
-         // getDrivers();
       }
 
    });
@@ -259,7 +281,11 @@ function getUserStateRecord() {
          } else {
            setPickupMarker(newLoc);
          }
-
+      } else {
+         if (mPickupMarker != null) {
+            mPickupMarker.setMap(null);
+            mPickupMarker = null;
+         }
       }
    });
 
@@ -272,6 +298,8 @@ function getUserStateRecord() {
          let newAddress = snapshot.val();
          document.getElementById("pickup").value = newAddress;
 
+      } else {
+         PICKUP_ADDRESS_FIELD.value = null;
       }
    });
 
@@ -473,11 +501,11 @@ function geoCodeCoordinates(atLatLng) {
    let geoCoder = new google.maps.Geocoder();
 
    geoCoder.geocode({ location: atLatLng }, (results, status) => {
+     let riderRef = firebase.database()
+        .ref("/riders").child(firebase.auth().currentUser.uid)
+        .child("formatted_address");
       if (status === "OK") {
          if (results[0]) {
-            let riderRef = firebase.database()
-               .ref("/riders").child(firebase.auth().currentUser.uid)
-               .child("formatted_address");
             riderRef.set(results[0].formatted_address);
          } else {
             //addressField.value = null;
@@ -500,4 +528,11 @@ function userMessage(message) {
 
    // After 3 seconds, remove the show class from DIV
    setTimeout(function(){ sb.classList.remove("show"); }, 3000);
+}
+
+function signOut() {
+
+   firebase.auth().signOut();
+   userMessage("GoodBye!");
+
 }

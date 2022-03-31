@@ -53,7 +53,7 @@
        </div> -->
        <!-- <div id="firebaseui-auth-container"></div> -->
 
-       <a id="link-signOut" href="#" class="btn btn-primary">Signout</a>
+<button id="btn-signout" onclick="signOut()" class="btn btn-primary">Signout</button>
 
 
 
@@ -85,9 +85,9 @@
 
 
 <div id="transportservice-content-container" class="container">
-<h5>Whare are you?</h5>
+<h5 id="h5-main-text">Whare are you?</h5>
 <div class="form-row" style="margin-top: 3px;">
-<div class="col-sm-9 form-group">
+<div class="col-sm-8 form-group">
 <!-- <label for="pickup">Pickup Address</label> -->
 <input type="text" class="form-control" id="pickup" placeholder="pickup location" name="pickup">
 </div>
@@ -99,6 +99,9 @@
 </div>
 <div id="btn-group-location" class="col-sm-1 form-group">
 <button id="btn-request" onclick="requestLocation()" class="btn btn-primary">Location</button>
+</div>
+<div id="btn-group-clear" class="col-sm-1 form-group">
+<button id="btn-clear" onclick="clearRecord()" class="btn btn-primary">Clear</button>
 </div>
 </div>
 

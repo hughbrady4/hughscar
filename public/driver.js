@@ -480,6 +480,13 @@ function errorMessage(message) {
    setTimeout(function(){ sb.className = sb.className.replace("show", ""); }, 3000);
 }
 
+function signOut() {
+
+   firebase.auth().signOut();
+   userMessage("GoodBye!");
+
+}
+
 function userMessage(message) {
    // Get the snackbar DIV
    let sb = document.getElementById("snackbar");
