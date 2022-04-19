@@ -129,46 +129,201 @@ function initAuth() {
    firebase.auth().onAuthStateChanged((user) => {
       if (user) {
          mUser =  user;
-         document.getElementById('firebaseui-auth-container').classList.remove("show");
-         userMessage("You are logged in.");
-         $("#btn-signout").show();
-         $("#transportservice-content-container").show();
 
-         name = user.displayName;
-         email = user.email;
-         photoUrl = user.photoURL;
-         emailVerified = user.emailVerified;
-         uid = user.uid;
+
+         let riderRef = firebase.database().ref("/riders").child(user.uid);
+         const updates = {};
+         updates['/name' ] = user.displayName;
+         updates['/email' ] = user.email;
+         updates['/photo_url'] = user.photoURL;
+         updates['/email_verified'] = user.emailVerified;
+         updates['/phone'] = user.phoneNumber;
+         updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+         riderRef.update(updates);
 
          getUserStateRecord();
          getDriverRecord();
          //getDrivers();
 
+         AUTH_CONTAINER.classList.remove("show");
+         if (mUser.isAnonymous) {
+            userMessage("You are logged in anonymously.");
+            $("#btn-signout").hide();
+            $(COLUMN_1).hide();
+         } else {
+           userMessage("You are logged in.");
+           $("#btn-signout").show();
+           $(COLUMN_1).show();
+
+         }
+
+         $("#transportservice-content-container").show();
+
+
+
       } else {
-         document.getElementById('firebaseui-auth-container').classList.add("show");
+         AUTH_CONTAINER.classList.add("show");
          userMessage("You are logged out.");
+         $(COLUMN_1).hide();
 
          $("#btn-signout").hide();
+         $("#link-drive").hide();
          // $("#btn-request").hide();
          $("#transportservice-content-container").hide();
          // photoUrl = "blank-profile-picture-973460_640.png";
          // $("#profile-picture").attr("src", photoUrl);
 
-         //document.getElementById('main-btn-grp').classList.remove("show");
-         // document.getElementById('btn-request-maintenance').classList.remove("show");
-         // document.getElementById('btn-driver-maintenance').classList.remove("show");
          ui.start('#firebaseui-auth-container', uiConfig);
       }
    });
 
+
+
 }
+
+function renderUI() {
+
+   var i = 0;
+   // function move() {
+   if (i == 0) {
+      i = 1;
+      var elem = document.getElementById("requestBar");
+      var width = 1;
+      var id = setInterval(frame, 1000);
+      function frame() {
+         if (width >= 100) {
+            clearInterval(id);
+            i = 0;
+         } else {
+            width++;
+            elem.style.width = width + "%";
+         }
+      }
+   }
+}
+
+
+function setAddress(address) {
+   let geoCoder = new google.maps.Geocoder();
+   //let address = PICKUP_ADDRESS_FIELD.value;
+
+   console.log(address);
+
+   geoCoder.geocode({ address: address }, (results, status) => {
+      if (status === "OK") {
+         if (results[0]) {
+            console.log(results[0].geometry.location);
+            let loc = results[0].geometry.location;
+            mUserLat = loc.lat();
+            mUserLng = loc.lng();
+
+            // let location = {
+            //    updated: firebase.database.ServerValue.TIMESTAMP,
+            //    last_loc: {lat: mUserLat, lng: mUserLng },
+            //    formatted_address: results[0].formatted_address,
+            //    status: "ready",
+            // };
+
+            let riderRef = firebase.database()
+               .ref("/riders").child(firebase.auth().currentUser.uid);
+
+            const updates = {};
+            updates['/last_loc' ] = {lat: mUserLat, lng: mUserLng };
+            updates['/formatted_address'] = results[0].formatted_address;
+            updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+
+            riderRef.update(updates);
+
+         }
+      } else {
+         userMessage(status);
+      }
+   });
+}
+
+
+function setDestinationAddress(address) {
+   let geoCoder = new google.maps.Geocoder();
+   //let address = PICKUP_ADDRESS_FIELD.value;
+
+   console.log(address);
+
+   geoCoder.geocode({ address: address }, (results, status) => {
+      if (status === "OK") {
+         if (results[0]) {
+            console.log(results[0].geometry.location);
+            let loc = results[0].geometry.location;
+            // mUserLat = loc.lat();
+            // mUserLng = loc.lng();
+            let destAddress = results[0].formatted_address;
+            let destination = {lat: loc.lat(), lng: loc.lng()};
+
+            // let location = {
+            //    updated: firebase.database.ServerValue.TIMESTAMP,
+            //    destination: {lat: mUserLat, lng: mUserLng },
+            //    formatted_address: results[0].formatted_address,
+            //    status: "ready",
+            // };
+
+            let riderRef = firebase.database()
+               .ref("/riders").child(firebase.auth().currentUser.uid);
+            // riderRef.set(location);
+
+            const updates = {};
+            updates['/destination' ] = destination;
+            updates['/dest_address' ] = destAddress;
+            updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+
+            riderRef.update(updates);
+
+         }
+      } else {
+         userMessage(status);
+      }
+   });
+}
+
+
+
 
 function requestRide() {
 
+   if (mRequestInProgress == true) {
+     userMessage("Request in Progress.");
+     return;
+   }
+
+   let requestRef = firebase.database()
+      .ref("/requests").push();
+
+   const updates = {};
+   updates['/fare' ] = mFare;
+   updates['/name' ] = mUser.displayName;
+   updates['/phone'] = mUser.phoneNumber;
+   updates['/pickup_lat'] = mPickupMarker.getPosition().lat();
+   updates['/pickup_lng'] = mPickupMarker.getPosition().lng();
+   updates['/pickup_address'] = PICKUP_ADDRESS_FIELD.value;
+   updates['/rider_uid'] = mUser.uid;
+   updates['/dest_lat'] = mDestMarker.getPosition().lat();
+   updates['/dest_lng'] = mDestMarker.getPosition().lng();
+   updates['/dest_address'] = DEST_ADDRESS_FIELD.value;
+
+   updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+   updates['/status'] = "pending";
+
+   requestRef.update(updates);
+
+   const updates2 = {};
+   updates2['/status'] = "pending";
+   updates2['/request_key'] = requestRef.key;
+   updates2['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+
+
+
    let riderRef = firebase.database()
-      .ref("/riders").child(firebase.auth().currentUser.uid)
-      .child("status");
-   riderRef.set("pending");
+      .ref("/riders").child(firebase.auth().currentUser.uid);
+   riderRef.update(updates2);
+
 
 }
 
