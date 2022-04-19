@@ -14,15 +14,37 @@ let mStatus;
 let mUserLat;
 let mUserLng;
 let mPickupMarker;
+let mDuration;
+let mDestination;
+
+let mDistance;
+let mRates;
+let mFare;
+let mDestMarker;
 let mDrivers = new Map();
 let mDirectionsService;
 let mDirectionsRenderer;
+let mPickupRenderer;
 let mLocationButton;
 let mRequestInProgress = false;
 let mRideRequestRef;
 
-const mMainHeadingField = document.getElementById("h5-main-text");
+const USER_MESSAGE_HEADING = document.getElementById("h5-main-text");
 const PICKUP_ADDRESS_FIELD = document.getElementById("pickup");
+const DEST_ADDRESS_FIELD = document.getElementById("destination");
+const LOCATION_BUTTON = document.getElementById("btn-group-location");
+const LOC_DEST_BUTTON = document.getElementById("btn-group-loc-dest");
+const COLUMN_1 = document.getElementById("col-1");
+const CLEAR_BUTTON = document.getElementById("btn-group-clear");
+const CLEAR_DEST_BTN = document.getElementById("btn-group-clear-dest");
+const SPINNER = document.getElementById("loader");
+
+const AUTH_CONTAINER = document.getElementById('firebaseui-auth-container');
+
+ let mDestInfoWindow;
+ let mDriverInfoWindow;
+
+
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
