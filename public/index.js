@@ -81,48 +81,26 @@ function initApp() {
       map: mMap,
    });
 
-   initAuth();
-
-   PICKUP_ADDRESS_FIELD.addEventListener("change", () => {
-
-      let geoCoder = new google.maps.Geocoder();
-      let address = PICKUP_ADDRESS_FIELD.value;
-
-      console.log(address);
-      //console.log(label);
-
-      geoCoder.geocode({ address: address }, (results, status) => {
-         if (status === "OK") {
-            if (results[0]) {
-               console.log(results[0].geometry.location);
-               let loc = results[0].geometry.location;
-               mUserLat = loc.lat();
-               mUserLng = loc.lng();
-
-               //PICKUP_ADDRESS_FIELD.value = results[0].formatted_address;
-
-               let location = {
-                  updated: firebase.database.ServerValue.TIMESTAMP,
-                  last_loc: {lat: mUserLat, lng: mUserLng },
-                  formatted_address: results[0].formatted_address,
-                  status: "ready",
-               };
-
-               let riderRef = firebase.database()
-                  .ref("/riders").child(firebase.auth().currentUser.uid);
-               riderRef.set(location);
-
-               //setPickupMarker(results[0].geometry.location, false);
-            }
-         } else {
-            userMessage(status);
-         }
-      });
+   mPickupRenderer = new google.maps.DirectionsRenderer({
+      //panel: directionsPanel,
+      markerOptions: markerOptions,
+      draggable: false,
+      map: mMap,
    });
+
+   initAuth();
 
 }
 
 function initAuth() {
+
+   // firebase.auth().signInAnonymously().then(() => {
+   //    // Signed in..
+   //    }).catch((error) => {
+   //    var errorCode = error.code;
+   //    var errorMessage = error.message;
+   //    // ...
+   // });
 
    let ui = new firebaseui.auth.AuthUI(firebase.auth());
 
@@ -130,20 +108,19 @@ function initAuth() {
       callbacks: {
          signInSuccessWithAuthResult: (authResult, redirectUrl) => {
             // Return type determines whether we continue the redirect automatically
-            document.getElementById('firebaseui-auth-container').classList.remove("show");
-            // document.getElementById('main-controls-container').classList.add("show");
-
+            AUTH_CONTAINER.classList.remove("show");
             return false;
          },
          uiShown: function() {
-            //document.getElementById('loader').style.display = 'none';
          }
       },
       signInFlow: 'popup',
       signInOptions: [
          //firebase.auth.EmailAuthProvider.PROVIDER_ID,
          //firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-         firebase.auth.PhoneAuthProvider.PROVIDER_ID
+         firebase.auth.PhoneAuthProvider.PROVIDER_ID,
+         // requireDisplayName: true,
+
       ],
       //tosUrl: '<your-tos-url>',
       //privacyPolicyUrl: '<your-privacy-policy-url>'
