@@ -1,37 +1,52 @@
+/* Rules for icon sizes: */
+.material-icons.md-18 { font-size: 18px; }
+.material-icons.md-24 { font-size: 24px; } /* Default */
+.material-icons.md-36 { font-size: 36px; }
+.material-icons.md-48 { font-size: 48px; }
 
-
-#transportservice-header-container {
-  border-radius: 5px;
-  border: 1px solid #73AD21;
-  width: 97%;
-  margin: 1% auto auto auto;
-  /* margin-top: 3%;
-  text-align: center;
-  background-color: #fff; */
-
-}
 
 #transportservice-content-container {
-  border-radius: 5px;
-  border: 1px solid #73AD21;
-  width: 97%;
-  margin: 1% auto auto auto;
+  /* border-radius: 5px; */
+  /* border: 1px solid #73AD21; */
+  /* width: 97%; */
+  /* margin: 1% auto auto auto; */
   /* margin-top: 3%;
   text-align: center;
   background-color: #fff; */
 
 }
 
+#main-heading {
+  padding-left: 5px;
+  padding-right: 5px;
+  position: relative;
+  animation-name: slide 5s;
+  -webkit-animation: slide 5s;
+  /* animation-duration: 5s; */
+}
+
+@keyframes slide {
+  from {left: 90vw;}
+  to {left: 0px;}
+}
+
+@-webkit-keyframes slide {
+  from {left: 90vw;}
+  to {left: 0px;}
+}
 
 #firebaseui-auth-container {
   /* text-align: center; */
   /* background-color: #fff; */
-  visibility: hidden;
+  display: none;
+  /* visibility: hidden; */
+  margin-top: 3%;
 
 }
 
 #firebaseui-auth-container.show {
-  visibility: visible;
+  display: block;
+  /* visibility: visible; */
 }
 
 #logout-button {
@@ -39,46 +54,27 @@
   /* background-color: #fff; */
   visibility: hidden;
 
-
-
 }
 
 #logout-button.show {
   visibility: visible;
 }
 
-#main-controls-container {
-  margin-top: 3%;
-  text-align: center;
-  margin-bottom: 3%;
-
-}
-
 #user-profile-container {
   /* margin-top: 3%;
   text-align: center;
   margin-bottom: 3%; */
-
 }
 
-
-#main-btn-grp {
-  /* text-align: center; */
-  /* background-color: #fff; */
-  visibility: hidden;
-
-  height: 0px;
-
+/* Safari */
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
 }
 
-#main-btn-grp.show {
-  /* text-align: center; */
-  /* background-color: #fff; */
-  visibility: visible;
-  height: auto;
-
-
-
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 
@@ -184,3 +180,49 @@
   height: 40px;
   cursor: pointer;
 }
+
+#requestProgress {
+  display: none;
+}
+
+#requestProgress.show {
+  display: flex;
+}
+
+#btn-group-location {
+  display: none;
+}
+
+#btn-group-location.show {
+  display: flex;
+}
+
+#btn-group-clear {
+  display: none;
+}
+
+#btn-group-clear.show {
+  display: flex;
+}
+
+#btn-group-loc-dest {
+  display: none;
+}
+
+#btn-group-loc-dest.show {
+  display: flex;
+}
+
+#btn-group-clear-dest {
+  display: none;
+}
+
+#btn-group-clear-dest.show {
+  display: flex;
+}
+
+/* #requestBar {
+  width: 0%;
+  height: 30px;
+  background-color: #007bff;
+} */
