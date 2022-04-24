@@ -22,6 +22,8 @@
 <!-- Latest compiled JavaScript -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
 <script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.2.0/firebase-analytics.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-database.js"></script>
@@ -31,83 +33,92 @@
 <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
 
 
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4455331716948205"
+     crossorigin="anonymous"></script>
 </head>
 
 <body>
 
-<div id="transportservice-header-container" class="container">
+
+<nav class="navbar navbar-expand-sm bg-light">
+
+    <!-- Links -->
+    <ul class="navbar-nav">
+      <a class="navbar-brand" href="#">Hugh&apos;s Car Service</a>
+      <li class="nav-item">
+        <a id="btn-signin" href="#" class="nav-link" onclick="authenticate()">Login</a>
+      </li>
+      <li class="nav-item">
+        <a id="btn-signout" href="#" class="nav-link" onclick="signOut()">Logout</a>
+      </li>
+      <li class="nav-item">
+        <a id="link-drive" class="nav-link" href="/driver.html">Drive</a>
+      </li>
+    </ul>
+
+</nav>
+
+<div id="firebaseui-auth-container" >
+</div>
+
+<div id="loader"></div>
+
+<div id="transportservice-content-container" class="container-fluid">
 
 <div class="row">
-
-<div class="col-lg-1" style="padding:3px 3px 3px 3px;">
-
-<!-- <div id="osweb-profile-container" class="container" style="margin:auto;"> -->
-
-       <!-- <div id="profile-card" class="card">
-       <img src="images/blank-profile-picture-973460_640.png" alt="Profile Pic"  id="profile-picture">
-       <div class="card-body" style="font-size:11px;">
-       <h5 id="profile-name" class="card-title">John Doe</h5>
-       <p id="profile-email" class="card-text">Some example text.</p>
-       <a id="link-signOut" href="#" class="btn btn-primary">Signout</a>
-       </div>
-       </div> -->
-       <!-- <div id="firebaseui-auth-container"></div> -->
-
-<button id="btn-signout" onclick="signOut()" class="btn btn-primary">Signout</button>
-
-
-
-<!-- </div> -->
-
-</div>
-
-<div class="col-lg-10" style="padding:3px 3px 3px 3px;">
-
-<h3>Hugh's Car Service</h3>
-<!-- <h5>Pueblo, CO</h5> -->
-
-
-</div>
-
-<div class="col-lg-1" style="padding:3px 3px 3px 3px;">
-
-<a id="link-drive" href="/driver.html" class="btn btn-primary">Drive</a>
-
-</div>
-
-</div>
-
-</div>
-
-<div id="firebaseui-auth-container">
-<!-- <h5 id="signin-heading">Please sign in to request a ride</h3> -->
+  <div class="col">
+  <div id="requestProgress" class="progress">
+  <div id="requestBar" class="progress-bar"></div>
+  </div>
+  </div>
+  <!-- <div id="btn-group-cancel" class="col-2">
+  <button id="btn-cancel" onclick="cancelRequest()" class="btn btn-primary">Cancel</button>
+  </div> -->
 </div>
 
 
-<div id="transportservice-content-container" class="container">
-<h5 id="h5-main-text">Whare are you?</h5>
-<div class="form-row" style="margin-top: 3px;">
-<div class="col-sm-8 form-group">
+
+<div class="row" style="margin-top: 3px;">
+<div class="col-sm-6">
+  <label id="h5-main-text" for="pickup">Where are you?</label>
+  <div class="input-group mb-3">
 <!-- <label for="pickup">Pickup Address</label> -->
-<input type="text" class="form-control" id="pickup" placeholder="pickup location" name="pickup">
-</div>
-<div id="btn-group-request" class="col-sm-1 form-group">
-<button id="btn-request" onclick="requestRide()" class="btn btn-primary">Request</button>
-</div>
-<div id="btn-group-cancel" class="col-sm-1 form-group">
-<button id="btn-cancel" onclick="cancelRequest()" class="btn btn-primary">Cancel</button>
-</div>
-<div id="btn-group-location" class="col-sm-1 form-group">
-<button id="btn-request" onclick="requestLocation()" class="btn btn-primary">Location</button>
-</div>
-<div id="btn-group-clear" class="col-sm-1 form-group">
-<button id="btn-clear" onclick="clearRecord()" class="btn btn-primary">Clear</button>
-</div>
+<input type="text" class="form-control" id="pickup"
+   placeholder="pickup location" name="pickup" onchange="setAddress(this.value)">
+<!-- <button id="btn-location" onclick="requestLocation('pickup')"
+   class="btn btn-primary"><i class="material-icons">my_location</i></button> -->
+   <div id="btn-group-location" class="btn-hide input-group-append">
+   <button id="btn-location" onclick="requestLocation('pickup')" type="button" class="btn btn-primary"><i class="material-icons md-18">my_location</i></button>
+   </div>
+
+   <div id="btn-group-clear" class="btn-hide input-group-append">
+   <button id="btn-clear" onclick="clearLocation('pickup')" type="button" class="btn btn-primary"><i class="material-icons md-18">cancel</i></button>
+   </div>
 </div>
 
-<!-- <div class="progress">
-  <div class="progress-bar" style="width:50%"></div>
-</div> -->
+</div>
+
+
+<div class="col-sm-6">
+
+  <label id="h5-dest-text" for="pickup">Where are you going?</label>
+  <div class="input-group mb-3">
+     <input type="text" class="form-control" id="destination"
+        placeholder="destination" name="destination" onchange="setDestinationAddress(this.value)">
+
+     <div id="btn-group-loc-dest" class="input-group-append">
+     <button id="btn-request-dest" onclick="requestLocation('destination')" class="btn btn-primary"><i class="material-icons md-18">my_location</i></button>
+     </div>
+
+     <div id="btn-group-clear-dest" class="input-group-append">
+     <button id="btn-clear-dest" onclick="clearLocation('destination')" class="btn btn-primary"><i class="material-icons md-18">cancel</i></button>
+     </div>
+  </div>
+
+</div>
+
+</div>
 
 <div id="map" class="map_full"></div>
 

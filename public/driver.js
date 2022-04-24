@@ -21,7 +21,11 @@ let mInfoWindow;
 let mUser;
 let mUserLat;
 let mUserLng;
-const mPickupAddressField = document.getElementById("pickup");
+const PICKUP_ADDRESS_FIELD = document.getElementById("pickup_address");
+const DEST_ADDRESS_FIELD = document.getElementById("dest_address");
+const RIDER_PHONE_FIELD = document.getElementById("rider_phone");
+
+
 
 function initApp() {
    let ui = new firebaseui.auth.AuthUI(firebase.auth());
@@ -54,7 +58,7 @@ function initApp() {
          // mainContainer.classList.add("show");
          getDriverLocation();
          getDriverStatus();
-         getRiders();
+         // getRiders();
       } else {
          // let mainContainer = document.getElementById('main_content');
          // mainContainer.classList.remove("show");
@@ -97,7 +101,13 @@ function goOnline() {
       .ref("drivers/" + firebase.auth().currentUser.uid);
    driverRef.set(driver);
 
+   Notification.requestPermission().then(function(result) {
+      console.log(result);
+   });
+
 }
+
+
 
 function goOffline() {
 
@@ -217,9 +227,16 @@ function getDriverStatus() {
          } else if (mStatus == "online") {
             $("#btn-group-offline").show();
             $("#btn-group-online").hide();
+            getRequests();
          } else if (mStatus == "offline") {
             $("#btn-group-online").show();
             $("#btn-group-offline").hide();
+            let riders = firebase.database()
+               .ref("/requests");
+               // .orderByChild("status")
+               // .equalTo("pending");
+               // .limitToFirst(1);
+            riders.off();
          } else {
             $("#btn-group-offline").show();
             $("#btn-group-online").show();
@@ -229,26 +246,46 @@ function getDriverStatus() {
 }
 
 
-function getRiders() {
+function getRequests() {
 
-   let riders = firebase.database()
-      .ref("/riders")
+   let requests = firebase.database()
+      .ref("/requests")
       .orderByChild("status")
       .equalTo("pending");
       // .limitToFirst(1);
 
-   riders.on('child_added', (snapshot) => {
-      console.log(snapshot.key);
-      console.log(snapshot.val());
-      addRiderMarker(snapshot);
+   requests.on('child_added', (snapshot) => {
+
+      let request = snapshot.val();
+
+      displayRequest(snapshot);
+      sendDriverNotice(request.pickup_address);
+      PICKUP_ADDRESS_FIELD.innerHTML = request.pickup_address;
+      DEST_ADDRESS_FIELD.innerHTML = request.dest_address;
+      RIDER_PHONE_FIELD.innerHTML = request.phone;
+
+      $("#myModal").modal();
    });
 
-   riders.on('child_removed', (snapshot) => {
+   requests.on('child_changed', (snapshot) => {
+     sendDriverNotice(snapshot.val());
+
+   })
+
+   requests.on('child_removed', (snapshot) => {
      console.log(snapshot.key);
      console.log(snapshot.val());
      removeRiderMarker(snapshot);
 
    });
+
+}
+
+function sendDriverNotice(value) {
+
+   let img = '/images/icons8-car-24.png';
+   let text = 'New Ride Request Pending' + value;
+   let notification = new Notification('Ride Request', { body: text, icon: img });
 
 }
 
@@ -260,32 +297,33 @@ function removeRiderMarker(snapshot) {
 
 }
 
-function addRiderMarker(snapshot) {
+function addRequestRoute(snapshot) {
 
+   let atLat = snapshot.val().pickup_lat;
+   let atLng = snapshot.val().pickup_lng;
+   let atLatLng = {lat: atLat, lng: atLng};
 
-   let atLatLng = snapshot.val().last_loc;
-
-   let marker = new google.maps.Marker({
-      // label: "A",
-      //animation: google.maps.Animation.DROP,
-      draggable: false,
-      position: atLatLng,
-      //icon: "/images/icons8-car-24.png",
-      map: mMap,
-   });
-
-   mRiderQueue.set(snapshot.key, marker);
-
-   marker.addListener("click", (event) => {
-      //mDriverMarker.setLabel(null);
-      mPickupAddressField.value = snapshot.val().formatted_address;
-      //mDriverMarker.setAnimation(google.maps.Animation.BOUNCE);
-   });
-
-   marker.addListener("mouseout", (event) => {
-      //mDriverMarker.setAnimation(null);
-      //mDriverMarker.setLabel("A");
-   });
+   // let marker = new google.maps.Marker({
+   //    // label: "A",
+   //    //animation: google.maps.Animation.DROP,
+   //    draggable: false,
+   //    position: atLatLng,
+   //    //icon: "/images/icons8-car-24.png",
+   //    map: mMap,
+   // });
+   //
+   // mRiderQueue.set(snapshot.key, marker);
+   //
+   // marker.addListener("click", (event) => {
+   //    //mDriverMarker.setLabel(null);
+   //    mPickupAddressField.value = snapshot.val().formatted_address;
+   //    //mDriverMarker.setAnimation(google.maps.Animation.BOUNCE);
+   // });
+   //
+   // marker.addListener("mouseout", (event) => {
+   //    //mDriverMarker.setAnimation(null);
+   //    //mDriverMarker.setLabel("A");
+   // });
 
 }
 
@@ -295,11 +333,17 @@ function addRiderMarker(snapshot) {
 function displayRequest(snapshot) {
 
    let data = snapshot.val();
-   console.log(data);
+   // console.log(data);
+
+   let atLat = snapshot.val().pickup_lat;
+   let atLng = snapshot.val().pickup_lng;
+   let atLatLng = {lat: atLat, lng: atLng};
+
+   let destLat = snapshot.val().dest_lat;
+   let destLng = snapshot.val().dest_lng;
+   let destination = {lat: destLat, lng: destLng};
 
    let departTime = new Date(Date.now() + 600 * 1000);
-   let origin = data.point_A;
-   let destination = data.point_B;
 
    const waypts = [];
 
@@ -311,7 +355,7 @@ function displayRequest(snapshot) {
    // }
 
    var request = {
-      origin: origin,
+      origin: atLatLng,
       destination: destination,
       waypoints: waypts,
       optimizeWaypoints: true,
@@ -324,35 +368,35 @@ function displayRequest(snapshot) {
    directionsService.route(request, function(result, status) {
       if (status == 'OK') {
 
-         clearMap();
-         google.maps.event.clearListeners(map, 'dblclick');
-
-         while (map.controls[google.maps.ControlPosition.BOTTOM_CENTER].length > 0) {
-            map.controls[google.maps.ControlPosition.BOTTOM_CENTER].pop();
-         }
+         // clearMap();
+         // google.maps.event.clearListeners(map, 'dblclick');
+         //
+         // while (map.controls[google.maps.ControlPosition.BOTTOM_CENTER].length > 0) {
+         //    map.controls[google.maps.ControlPosition.BOTTOM_CENTER].pop();
+         // }
 
          const directionsRenderer = new google.maps.DirectionsRenderer({
             //panel: directionsPanel,
             draggable: false,
-            map:map,
+            map: mMap,
          });
 
-         directionsArr.push(directionsRenderer);
+         // directionsArr.push(directionsRenderer);
 
 
-         directionsRenderer.setMap(map);
+         // directionsRenderer.setMap(map);
          directionsRenderer.setDirections(result);
 
-         //add accept button
-         const acceptButton = document.createElement("button");
-         acceptButton.textContent = "Accept";
-         acceptButton.classList.add("button");
-         acceptButton.addEventListener("click", () => {
-            writeAccept(snapshot);
-
-
-         });
-         map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(acceptButton);
+         // //add accept button
+         // const acceptButton = document.createElement("button");
+         // acceptButton.textContent = "Accept";
+         // acceptButton.classList.add("button");
+         // acceptButton.addEventListener("click", () => {
+         //    writeAccept(snapshot);
+         //
+         //
+         // });
+         // map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(acceptButton);
 
       } else {
         errorMessage(status);
