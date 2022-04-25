@@ -31,8 +31,6 @@ let mRideRequestRef;
 let mDestInfoWindow;
 let mDriverInfoWindow;
 
-
-
 const USER_MESSAGE_HEADING = document.getElementById("h5-main-text");
 const PICKUP_ADDRESS_FIELD = document.getElementById("pickup");
 const DEST_ADDRESS_FIELD = document.getElementById("destination");
@@ -45,11 +43,214 @@ const PROGRESS = document.getElementById("requestProgress");
 const PROGRESS_BAR = document.getElementById("requestBar");
 const AUTH_CONTAINER = document.getElementById('firebaseui-auth-container');
 
-
-
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();
+
+function authenticate() {
+
+   AUTH_CONTAINER.classList.add("show");
+
+   let ui = new firebaseui.auth.AuthUI(firebase.auth());
+   let data;
+
+   let uiConfig = {
+      callbacks: {
+         signInSuccessWithAuthResult: (authResult, redirectUrl) => {
+            // Return type determines whether we continue the redirect automatically
+            //AUTH_CONTAINER.classList.remove("show");
+            return false;
+         },
+         uiShown: function() {
+         },
+         // signInFailure callback must be provided to handle merge conflicts which
+         // occur when an existing credential is linked to an anonymous user.
+         signInFailure: function(error) {
+            // For merge conflicts, the error.code will be
+            // 'firebaseui/anonymous-upgrade-merge-conflict'.
+            if (error.code != 'firebaseui/anonymous-upgrade-merge-conflict') {
+               return Promise.resolve();
+            }
+
+            // The credential the user tried to sign in with.
+            let cred = error.credential;
+
+            let anonymousUser = mUser;
+            let riderRef = firebase.database().ref("/riders").child(mUser.uid);
+            return riderRef.get().then((snapshot) => {
+               data = snapshot.val();
+               console.log(data);
+               return riderRef.set(null);
+            }).then(() => {
+               return firebase.auth().signInWithCredential(cred);
+            }).then((userCred) => {
+               // Original Anonymous Auth instance now has the new user.
+               console.log(userCred.user);
+               let riderRef2 = firebase.database().ref("/riders").child(userCred.user.uid);
+               const updates = {};
+               updates['/dest_address' ] = data.dest_address;
+               updates['/formatted_address' ] = data.formatted_address;
+               updates['/last_loc'] = data.last_loc;
+               updates['/destination'] = data.destination;
+               // updates['/status' ] = null;
+
+
+               updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+               return riderRef2.update(updates);
+               // return riderRef2.set(data);
+            }).then(() => {
+               // Delete anonymnous user.
+               return anonymousUser.delete();
+            }).then(() => {
+               // Clear data in case a new user signs in, and the state change
+               // triggers.
+               data = null;
+               // FirebaseUI will reset and the UI cleared when this promise
+               // resolves.
+               // signInSuccessWithAuthResult will not run. Successful sign-in
+               // logic has to be run explicitly.
+               //window.location.assign('<url-to-redirect-to-on-success>');
+            }).catch((error) => {
+               console.log(error.message);
+            });
+         }
+      },
+      autoUpgradeAnonymousUsers: true,
+      signInFlow: 'popup',
+      signInOptions: [
+         //firebase.auth.EmailAuthProvider.PROVIDER_ID,
+         //firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+         firebase.auth.PhoneAuthProvider.PROVIDER_ID,
+         // requireDisplayName: true,
+
+      ],
+      //tosUrl: '<your-tos-url>',
+      //privacyPolicyUrl: '<your-privacy-policy-url>'
+   };
+
+   ui.start('#firebaseui-auth-container', uiConfig);
+
+}
+
+function cancelRequest() {
+
+   let riderRef = firebase.database()
+      .ref("/riders").child(mUser.uid);
+
+   const updates = {};
+   updates['/status' ] = null;
+   updates['/request_key' ] = null;
+   updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+   riderRef.update(updates).then(() => {
+
+   }).catch((error) => {
+
+   });
+
+}
+
+function clearLocation(type) {
+
+   let riderRef = firebase.database()
+      .ref("/riders").child(firebase.auth().currentUser.uid);
+
+   const updates = {};
+   if (type == 'pickup') {
+      updates['/last_loc' ] = null;
+      updates['/formatted_address'] = null;
+   } else if (type == 'destination') {
+     updates['/destination' ] = null;
+     updates['/dest_address'] = null;
+   }
+   //updates['/status'] = null;
+
+   updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+
+   riderRef.update(updates);
+
+}
+
+function computeFare() {
+
+   if (mDuration == null || mDistance == null || mRates == null) {
+      return;
+   }
+
+   let minutes = mDuration.value / 60;
+
+   console.log(minutes);
+
+   let miles = mDistance.value * 0.000621371;
+
+   console.log(miles);
+
+   let baseFare = mRates.base_rate;
+   let cancelFare = mRates.cancelation_rate;
+   let mileageFare = miles * mRates.mileage_rate;
+   let timeFare = minutes * mRates.per_minute_rate;
+
+   let totalFare = baseFare + mileageFare + timeFare;
+
+   mFare = { base_amount: baseFare,  cancel_amount: cancelFare,
+             mileage_amount: mileageFare,
+             time_amount: timeFare, fare_amount: totalFare };
+
+   let riderRef = firebase.database()
+      .ref("/riders").child(firebase.auth().currentUser.uid);
+
+   const updates = {};
+   updates['/fare' ] = mFare;
+   updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+
+   riderRef.update(updates);
+
+
+   // Create our number formatter.
+   let formatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: mRates.currency,
+
+      // These options are needed to round to whole numbers if that's what you want.
+      //minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
+      //maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
+   });
+
+   // formatter.format(2500);
+
+   let fareStr = formatter.format(totalFare);
+   // console.log(formatter.format(totalFare));
+
+   const contentString =
+      '<div id="content">' +
+      '<div id="siteNotice">' +
+      "</div>" +
+      '<h5 id="firstHeading" class="firstHeading">' + fareStr + '</h5>' +
+
+      '<div id="bodyContent">' +
+      '<button id="btn-request-ride" class="btn btn-primary" onclick="requestRide()">Request</button>' +
+      "<p>Your destination is <b>" + mDistance.text + "</b> away. The trip " +
+      "duration is <b>" + mDuration.text + "</b>.</p>" +
+      "</div>" +
+      "</div>";
+
+   if (mDestInfoWindow != null) {
+      mDestInfoWindow.close();
+   }
+   mDestInfoWindow = new google.maps.InfoWindow();
+
+   mDestInfoWindow.setContent(contentString);
+
+   console.log(mDestMarker);
+   console.log(mMap);
+
+
+   mDestInfoWindow.open({
+      anchor: mDestMarker,
+      mMap,
+      shouldFocus: false,
+   });
+
+}
 
 function initApp() {
 
@@ -162,92 +363,6 @@ function showProgressBar() {
    }, 3000);
 }
 
-function authenticate() {
-
-   AUTH_CONTAINER.classList.add("show");
-
-
-   let ui = new firebaseui.auth.AuthUI(firebase.auth());
-   let data;
-
-   let uiConfig = {
-      callbacks: {
-         signInSuccessWithAuthResult: (authResult, redirectUrl) => {
-            // Return type determines whether we continue the redirect automatically
-            //AUTH_CONTAINER.classList.remove("show");
-            return false;
-         },
-         uiShown: function() {
-         },
-         // signInFailure callback must be provided to handle merge conflicts which
-         // occur when an existing credential is linked to an anonymous user.
-         signInFailure: function(error) {
-            // For merge conflicts, the error.code will be
-            // 'firebaseui/anonymous-upgrade-merge-conflict'.
-            if (error.code != 'firebaseui/anonymous-upgrade-merge-conflict') {
-               return Promise.resolve();
-            }
-
-            // The credential the user tried to sign in with.
-            let cred = error.credential;
-
-            let anonymousUser = mUser;
-            let riderRef = firebase.database().ref("/riders").child(mUser.uid);
-            return riderRef.get().then((snapshot) => {
-               data = snapshot.val();
-               console.log(data);
-               return riderRef.set(null);
-            }).then(() => {
-               return firebase.auth().signInWithCredential(cred);
-            }).then((userCred) => {
-               // Original Anonymous Auth instance now has the new user.
-               console.log(userCred.user);
-               let riderRef2 = firebase.database().ref("/riders").child(userCred.user.uid);
-               const updates = {};
-               updates['/dest_address' ] = data.dest_address;
-               updates['/formatted_address' ] = data.formatted_address;
-               updates['/last_loc'] = data.last_loc;
-               updates['/destination'] = data.destination;
-               // updates['/status' ] = null;
-
-
-               updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
-               return riderRef2.update(updates);
-               // return riderRef2.set(data);
-            }).then(() => {
-               // Delete anonymnous user.
-               return anonymousUser.delete();
-            }).then(() => {
-               // Clear data in case a new user signs in, and the state change
-               // triggers.
-               data = null;
-               // FirebaseUI will reset and the UI cleared when this promise
-               // resolves.
-               // signInSuccessWithAuthResult will not run. Successful sign-in
-               // logic has to be run explicitly.
-               //window.location.assign('<url-to-redirect-to-on-success>');
-            }).catch((error) => {
-               console.log(error.message);
-            });
-         }
-      },
-      autoUpgradeAnonymousUsers: true,
-      signInFlow: 'popup',
-      signInOptions: [
-         //firebase.auth.EmailAuthProvider.PROVIDER_ID,
-         //firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-         firebase.auth.PhoneAuthProvider.PROVIDER_ID,
-         // requireDisplayName: true,
-
-      ],
-      //tosUrl: '<your-tos-url>',
-      //privacyPolicyUrl: '<your-privacy-policy-url>'
-   };
-
-   ui.start('#firebaseui-auth-container', uiConfig);
-
-}
-
 function setAddress(address) {
    let geoCoder = new google.maps.Geocoder();
    //let address = PICKUP_ADDRESS_FIELD.value;
@@ -294,13 +409,6 @@ function setDestinationAddress(address) {
             // mUserLng = loc.lng();
             let destAddress = results[0].formatted_address;
             let destination = {lat: loc.lat(), lng: loc.lng()};
-
-            // let location = {
-            //    updated: firebase.database.ServerValue.TIMESTAMP,
-            //    destination: {lat: mUserLat, lng: mUserLng },
-            //    formatted_address: results[0].formatted_address,
-            //    status: "ready",
-            // };
 
             let riderRef = firebase.database()
                .ref("/riders").child(firebase.auth().currentUser.uid);
@@ -350,49 +458,22 @@ function requestRide() {
    updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
    updates['/status'] = "pending";
 
-   requestRef.update(updates);
+   requestRef.update(updates).then(() => {
 
-   const updates2 = {};
-   updates2['/status'] = "pending";
-   updates2['/request_key'] = requestRef.key;
-   updates2['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
-
-
-
-   let riderRef = firebase.database()
-      .ref("/riders").child(firebase.auth().currentUser.uid);
-   riderRef.update(updates2);
+     const updates2 = {};
+     updates2['/status'] = "pending";
+     updates2['/request_key'] = requestRef.key;
+     updates2['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
 
 
-}
+     let riderRef = firebase.database()
+        .ref("/riders").child(firebase.auth().currentUser.uid);
+     riderRef.update(updates2);
 
-function cancelRequest() {
+   });
 
-   let riderRef = firebase.database()
-      .ref("/riders").child(firebase.auth().currentUser.uid)
-      .child("status");
-   riderRef.set("ready");
 
-}
 
-function clearLocation(type) {
-
-   let riderRef = firebase.database()
-      .ref("/riders").child(firebase.auth().currentUser.uid);
-
-   const updates = {};
-   if (type == 'pickup') {
-      updates['/last_loc' ] = null;
-      updates['/formatted_address'] = null;
-   } else if (type == 'destination') {
-     updates['/destination' ] = null;
-     updates['/dest_address'] = null;
-   }
-   //updates['/status'] = null;
-
-   updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
-
-   riderRef.update(updates);
 
 }
 
@@ -422,7 +503,7 @@ function getUserStateRecord() {
    controlRecord.get().then((snapshot) => {
       if (snapshot.exists()) {
           mRates = snapshot.val();
-          console.log(mRates);
+          console.log("Control Data: " + mRates);
       } else {
           mRates = null;
       }
@@ -624,12 +705,26 @@ function getUserStateRecord() {
          LOC_DEST_BUTTON.classList.remove("show");
          CLEAR_DEST_BTN.classList.remove("show");
 
+
+         const cancelButton = document.createElement("button");
+         cancelButton.textContent = "Cancel";
+         cancelButton.classList.add("btn");
+         cancelButton.classList.add("btn-primary");
+         mMap.controls[google.maps.ControlPosition.TOP_CENTER].push(cancelButton);
+         cancelButton.addEventListener("click", () => {
+
+            cancelRequest();
+         });
+
+
+
+
          let requestRecordStatus = firebase.database().ref("/requests")
                             .child(mRideRequestRef).child("status");
 
          requestRecordStatus.on('value', (snapshot) => {
             if (snapshot.exists()) {
-               console.log(snapshot.val());
+               console.log("Request status: " + snapshot.val());
 
                //routePickup();
             }
@@ -658,90 +753,11 @@ function getUserStateRecord() {
             requestRecord.off();
             mRideRequestRef = null;
          }
-         mRequestInProgress = false;
+         if (mRequestInProgress == true) {
+            mMap.controls[google.maps.ControlPosition.TOP_CENTER].pop();
+            mRequestInProgress = false;
+         }
       }
-   });
-
-}
-
-function computeFare() {
-
-   if (mDuration == null || mDistance == null || mRates == null) {
-      return;
-   }
-
-   let minutes = mDuration.value / 60;
-
-   console.log(minutes);
-
-   let miles = mDistance.value * 0.000621371;
-
-   console.log(miles);
-
-   let baseFare = mRates.base_rate;
-   let cancelFare = mRates.cancelation_rate;
-   let mileageFare = miles * mRates.mileage_rate;
-   let timeFare = minutes * mRates.per_minute_rate;
-
-   let totalFare = baseFare + mileageFare + timeFare;
-
-   mFare = { base_amount: baseFare,  cancel_amount: cancelFare,
-             mileage_amount: mileageFare,
-             time_amount: timeFare, fare_amount: totalFare };
-
-   let riderRef = firebase.database()
-      .ref("/riders").child(firebase.auth().currentUser.uid);
-
-   const updates = {};
-   updates['/fare' ] = mFare;
-   updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
-
-   riderRef.update(updates);
-
-
-   // Create our number formatter.
-   let formatter = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: mRates.currency,
-
-      // These options are needed to round to whole numbers if that's what you want.
-      //minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
-      //maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
-   });
-
-   // formatter.format(2500);
-
-   let fareStr = formatter.format(totalFare);
-   // console.log(formatter.format(totalFare));
-
-   const contentString =
-      '<div id="content">' +
-      '<div id="siteNotice">' +
-      "</div>" +
-      '<h5 id="firstHeading" class="firstHeading">' + fareStr + '</h5>' +
-
-      '<div id="bodyContent">' +
-      '<button id="btn-request-ride" class="btn btn-primary" onclick="requestRide()">Request</button>' +
-      "<p>Your destination is <b>" + mDistance.text + "</b> away. The trip " +
-      "duration is <b>" + mDuration.text + "</b>.</p>" +
-      "</div>" +
-      "</div>";
-
-   if (mDestInfoWindow != null) {
-      mDestInfoWindow.close();
-   }
-   mDestInfoWindow = new google.maps.InfoWindow();
-
-   mDestInfoWindow.setContent(contentString);
-
-   console.log(mDestMarker);
-   console.log(mMap);
-
-
-   mDestInfoWindow.open({
-      anchor: mDestMarker,
-      mMap,
-      shouldFocus: false,
    });
 
 }
