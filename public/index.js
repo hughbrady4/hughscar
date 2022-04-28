@@ -132,19 +132,28 @@ function authenticate() {
 
 }
 
-function cancelRequest() {
+function cancelRequest(requestId) {
 
-   let riderRef = firebase.database()
-      .ref("/riders").child(mUser.uid);
+   let requestRef = firebase.database()
+      .ref("/requests").child(requestId);
 
    const updates = {};
-   updates['/status' ] = null;
-   updates['/request_key' ] = null;
+   updates['/status' ] = "canceled";
    updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
-   riderRef.update(updates).then(() => {
+   requestRef.update(updates).then(() => {
+
+     let riderRef = firebase.database()
+        .ref("/riders").child(mUser.uid);
+
+     const updates2 = {};
+     updates2['/status' ] = null;
+     updates2['/request_key' ] = null;
+     updates2['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+     return riderRef.update(updates2);
+
 
    }).catch((error) => {
-
+      userMessage(error.message);
    });
 
 }
