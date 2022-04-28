@@ -317,7 +317,7 @@ function initAuth() {
          $("#btn-signin").show();
 
          firebase.auth().signInAnonymously().then(() => {
-            userMessage("You are logged in anonymously.");
+            //userMessage("You are logged in anonymously.");
          }).catch((error) => {
             $("#transportservice-content-container").hide();
             let errorCode = error.code;
@@ -327,10 +327,11 @@ function initAuth() {
          return;
       }
 
+      AUTH_CONTAINER.classList.remove("show");
       mUser =  user;
 
       if (mUser.isAnonymous) {
-         userMessage("You are still logged in anonymously.");
+         //userMessage("You are still logged in anonymously.");
          $("#btn-signout").hide();
          $("#btn-signin").show();
       } else {
