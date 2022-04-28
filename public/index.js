@@ -722,8 +722,7 @@ function getUserStateRecord() {
          cancelButton.classList.add("btn-primary");
          mMap.controls[google.maps.ControlPosition.TOP_CENTER].push(cancelButton);
          cancelButton.addEventListener("click", () => {
-
-            cancelRequest();
+            cancelRequest(mRideRequestRef);
          });
 
 
