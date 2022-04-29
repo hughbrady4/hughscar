@@ -404,6 +404,18 @@ function setAddress(address) {
    });
 }
 
+function setDateTime(value) {
+
+   const updates = {};
+   updates['/date_time'] = value;
+   updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+
+   let riderRef = firebase.database()
+      .ref("/riders").child(mUser.uid);
+   riderRef.update(updates);
+
+}
+
 function setDestinationAddress(address) {
    let geoCoder = new google.maps.Geocoder();
    //let address = PICKUP_ADDRESS_FIELD.value;

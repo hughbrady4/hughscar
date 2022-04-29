@@ -80,7 +80,7 @@
 
 
 <div class="row" style="margin-top: 3px;">
-<div class="col-sm-6">
+<div class="col-sm-4">
   <label id="h5-main-text" for="pickup">Where are you?</label>
   <div class="input-group mb-3">
 <!-- <label for="pickup">Pickup Address</label> -->
@@ -100,7 +100,7 @@
 </div>
 
 
-<div class="col-sm-6">
+<div class="col-sm-4">
 
   <label id="h5-dest-text" for="pickup">Where are you going?</label>
   <div class="input-group mb-3">
@@ -117,6 +117,19 @@
   </div>
 
 </div>
+
+<div class="col-sm-3">
+
+  <label id="h5-date-text" for="pickup">Pickup Time?</label>
+  <div class="input-group mb-3">
+     <input type="datetime-local" class="form-control" id="datetime"
+        name="datetime" onchange="setDateTime(this.value)">
+
+  </div>
+
+</div>
+
+
 
 </div>
 
