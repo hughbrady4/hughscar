@@ -57,7 +57,7 @@ function readRequests() {
       // .orderByChild("/startedAt/");
 
    openRequests.on('child_added', (data) => {
-      console.log(data.val());
+
       const newRow = document.createElement("tr");
       newRow.id = data.key;
 
@@ -107,7 +107,7 @@ function readRequests() {
          // errorMessage(key);
          errorMessage(data.val());
 
-         window.open("/request_edit.html?request=" + key);
+         window.open("/request.html?request=" + key);
 
          console.log(data.val());
       });

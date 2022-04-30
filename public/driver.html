@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="ISO-8859-1">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Driver App">
 
@@ -32,33 +32,23 @@
 
 <body>
 
-<div id="transportservice-header-container" class="container">
+<nav class="navbar navbar-expand-sm bg-light">
+ <a class="navbar-brand" href="#">Hugh&apos;s Car Service</a>
 
-<div class="row">
+ <!-- Links -->
+ <ul class="navbar-nav">
+  <li class="nav-item">
+   <a id="btn-signin" href="#" class="nav-link" onclick="authenticate()">Login</a>
+  </li>
+  <li class="nav-item">
+   <a id="btn-signout" href="#" class="nav-link" onclick="signOut()">Logout</a>
+  </li>
+  <li class="nav-item">
+   <a id="link-drive" class="nav-link" href="/">Home</a>
+  </li>
+ </ul>
 
-<div class="col-lg-1" style="padding:3px 3px 3px 3px;">
-
-<button id="btn-signout" onclick="signOut()" class="btn btn-primary">Signout</button>
-
-</div>
-
-<div class="col-lg-10" style="padding:3px 3px 3px 3px;">
-
-<h3>Hugh's Car Service</h3>
-<!-- <h5>Pueblo, CO</h5> -->
-
-</div>
-
-<div class="col-lg-1" style="padding:3px 3px 3px 3px;">
-
-<a id="link-ride" href="https://www.hughscar.com" class="btn btn-primary">Ride</a>
-
-</div>
-
-
-</div>
-
-</div>
+</nav>
 
 <!-- <div id="loader"></div> -->
 <div id="firebaseui-auth-container">
@@ -66,7 +56,7 @@
 </div>
 
 
-<div id="transportservice-content-container" class="container">
+<div id="transportservice-content-container" class="container-fluid">
 
   <!-- The Modal -->
 <div class="modal" id="myModal">
