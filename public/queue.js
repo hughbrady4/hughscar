@@ -29,7 +29,7 @@ var startTime = new Date().getTime();
 function getMessageToken() {
 
    messaging.getToken({ vapidKey: 'BMI6z7npGh-ZhjdrInd2oRKpDpy0Keu30rBzREHZVVoCEzz5zsvOQIK3evNt8yeVP_UHKul0RJH4rBT5eCK-Gpk' }).then((currentToken) => {
-     
+
 
       if (currentToken) {
          // Send the token to your server and update the UI if necessary
@@ -52,8 +52,8 @@ function readRequests() {
    }
 
    let openRequests = firebase.database()
-      .ref("/requests/")
-      .orderByChild("status").equalTo("pending");
+      .ref("/requests/");
+      // .orderByChild("status").equalTo("pending");
       // .orderByChild("/startedAt/");
 
    openRequests.on('child_added', (data) => {
@@ -162,6 +162,16 @@ function initAuth() {
          logoutButton.addEventListener('click', () => {
             firebase.auth().signOut();
          });
+
+         if (user.isAnonymous) {
+            //userMessage("You are still logged in anonymously.");
+            $("#btn-signout").hide();
+            $("#btn-signin").show();
+         } else {
+            userMessage("You are logged in.");
+            $("#btn-signout").show();
+            $("#btn-signin").hide();
+         }
 
 
          readRequests();
