@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-<html>
 <head>
-<meta charset="ISO-8859-1">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hugh's Car Service</title>
 <link rel="stylesheet" href="css/styles.css">
@@ -32,17 +31,43 @@
 
 <body>
 
+  <nav class="navbar navbar-expand-sm bg-light">
+      <a class="navbar-brand" href="#">Hugh&apos;s Car Service</a>
+
+      <!-- Links -->
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a id="btn-signin" href="#" class="nav-link" onclick="authenticate()">Login</a>
+        </li>
+        <li class="nav-item">
+          <a id="btn-signout" href="#" class="nav-link" onclick="signOut()">Logout</a>
+        </li>
+        <li class="nav-item">
+          <a id="link-drive" class="nav-link" href="/driver.html">Drive</a>
+        </li>
+        <li class="nav-item">
+          <a id="link-queue" class="nav-link" href="/queue.html">Queue</a>
+        </li>
+      </ul>
+
+  </nav>
 
 <div id="loader"></div>
+
 <div id="firebaseui-auth-container">
+
 <h3 id="signin-heading">Please sign in to request a ride</h3>
 </div>
+
+<div id="transportservice-content-container" class="container-fluid">
 <div id="map" class="map_full"></div>
 
 
 <div id="snackbar"></div>
 
-<script src="request_edit.js"></script>
+</div>
+
+<script src="request.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9Gmjr0VbitRRSKgiGVG4xFc8Rgk7gK1Y&callback=initApp&libraries=&v=weekly"></script>
 
 
