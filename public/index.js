@@ -581,6 +581,8 @@ function getUserStateRecord() {
          DEST_ADDRESS_FIELD.readOnly = true;
          USER_MESSAGE_HEADING.innerHTML = "You're pickup request is pending.";
 
+      } else if (mStatus == "accepted") {
+
       } else {
 
          if (mPickupMarker != null) {
@@ -746,7 +748,30 @@ function getUserStateRecord() {
          requestRecordStatus.on('value', (snapshot) => {
             if (snapshot.exists()) {
                console.log("Request status: " + snapshot.val());
+               if (mStatus == "accepted") {
+                 PROGRESS.classList.remove("show");
+                 SPINNER.classList.add("show");
 
+                 USER_MESSAGE_HEADING.innerHTML = "You're pickup request is accepted.";
+
+               } else if (mStatus == "pending") {
+
+                  if (mPickupMarker != null) {
+                     mPickupMarker.setDraggable(false);
+                  }
+                  if (mDestMarker != null) {
+                     mDestMarker.setDraggable(false);
+                  }
+
+                  SPINNER.classList.add("show");
+                  PROGRESS.classList.add("show");
+
+                  showProgressBar();
+                  PICKUP_ADDRESS_FIELD.readOnly = true;
+                  DEST_ADDRESS_FIELD.readOnly = true;
+                  USER_MESSAGE_HEADING.innerHTML = "You're pickup request is pending.";
+
+               }
                //routePickup();
             }
          });
