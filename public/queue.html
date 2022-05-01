@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-<html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hugh's Car Service</title>
-<link rel="stylesheet" href="css/styles1.css">
+<link rel="stylesheet" href="css/index.css">
 
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
 
 <!-- jQuery library -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -33,23 +31,23 @@
 
 
 <nav class="navbar navbar-expand-sm bg-light">
+<a class="navbar-brand" href="#">Hugh&apos;s Car Service</a>
+<!-- Links -->
+<ul class="navbar-nav">
 
-    <!-- Links -->
-    <ul class="navbar-nav">
-      <a class="navbar-brand" href="#">Hugh&apos;s Car Service</a>
-      <li class="nav-item">
-        <a id="btn-signin" href="#" class="nav-link" onclick="authenticate()">Login</a>
-      </li>
-      <li class="nav-item">
-        <a id="btn-signout" href="#" class="nav-link" onclick="signOut()">Logout</a>
-      </li>
-      <li class="nav-item">
-        <a id="link-ride" class="nav-link" href="/">Ride</a>
-      </li>
-      <li class="nav-item">
-        <a id="link-drive" class="nav-link" href="/driver.html">Drive</a>
-      </li>
-    </ul>
+<li class="nav-item">
+<a id="btn-signin" href="#" class="nav-link" onclick="authenticate()">Login</a>
+</li>
+<li class="nav-item">
+<a id="btn-signout" href="#" class="nav-link" onclick="signOut()">Logout</a>
+</li>
+<li class="nav-item">
+<a id="link-ride" class="nav-link" href="/">Ride</a>
+</li>
+<li class="nav-item">
+<a id="link-drive" class="nav-link" href="/driver.html">Drive</a>
+</li>
+</ul>
 
 </nav>
 
@@ -84,13 +82,13 @@
 </form>
 
 </div> -->
-
+<!-- <button type="button" class="btn btn-default btn-sm pull-right" onclick="getMessageToken()">
+  <span class="glyphicon glyphicon-cog"></span> Settings
+</button> -->
 
 <div id="user-list-container" class="table-responsive">
 
-  <button type="button" class="btn btn-default btn-sm pull-right">
-    <span class="glyphicon glyphicon-cog"></span> Settings
-  </button>
+
   <table class="table table-hover">
     <thead>
       <tr>
