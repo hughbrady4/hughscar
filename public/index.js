@@ -522,6 +522,23 @@ function getDriverRecord() {
       }
    });
 
+   let adminRecord = firebase.database().ref("/admin/")
+                      .child(mUser.uid);
+
+   adminRecord.get().then((snapshot) => {
+      console.log(snapshot.val());
+      if (snapshot.exists()) {
+         $("#link-queue").show();
+         //$("#col-drive").css("display", "inline");
+      } else {
+         $("#link-queue").hide();
+         //$("#col-drive").css("display", "none");
+
+      }
+   }).catch((error) => {
+      userMessage(error.message);
+   });
+
  }
 
 function getUserStateRecord() {
