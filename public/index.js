@@ -385,29 +385,31 @@ function setAddress(address) {
       if (status === "OK" && results[0]) {
          // console.log(results[0].geometry.location);
          mUserLoc = results[0].geometry.location;
-         mUserLat = loc.lat();
-         mUserLng = loc.lng();
-         return results[0].formatted_address;
+         mUserLat = mUserLoc.lat();
+         mUserLng = mUserLoc.lng();
+         console.log(mUserLoc.toJSON());
+         let riderRef = firebase.database()
+            .ref("/riders").child(firebase.auth().currentUser.uid);
+
+         const updates = {};
+         updates['/last_loc' ] = mUserLoc.toJSON();
+         updates['/formatted_address'] = results[0].formatted_address;
+         updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+         return riderRef.update(updates);
+
       } else {
          userMessage(status);
       }
-   }).then((address) => {
+   }).catch((error) => {
 
-     let riderRef = firebase.database()
-        .ref("/riders").child(firebase.auth().currentUser.uid);
-
-     const updates = {};
-     updates['/last_loc' ] = mUserLoc;
-     updates['/formatted_address'] = address;
-     updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
-
-     riderRef.update(updates);
+      userMessage(error.code);
 
    });
 }
 
 function setDateTime(value) {
 
+   if (value == "") {value = null}
    const updates = {};
    updates['/date_time'] = value;
    updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
