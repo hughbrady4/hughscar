@@ -34,6 +34,8 @@ let mDriverInfoWindow;
 const USER_MESSAGE_HEADING = document.getElementById("h5-main-text");
 const PICKUP_ADDRESS_FIELD = document.getElementById("pickup");
 const DEST_ADDRESS_FIELD = document.getElementById("destination");
+const DATE_TIME_FIELD = document.getElementById("datetime");
+
 const LOCATION_BUTTON = document.getElementById("btn-group-location");
 const LOC_DEST_BUTTON = document.getElementById("btn-group-loc-dest");
 const CLEAR_BUTTON = document.getElementById("btn-group-clear");
@@ -472,6 +474,7 @@ function requestRide() {
    updates['/pickup_lat'] = mPickupMarker.getPosition().lat();
    updates['/pickup_lng'] = mPickupMarker.getPosition().lng();
    updates['/pickup_address'] = PICKUP_ADDRESS_FIELD.value;
+   updates['/pickup_time'] = DATE_TIME_FIELD.value;
    updates['/rider_uid'] = mUser.uid;
    updates['/dest_lat'] = mDestMarker.getPosition().lat();
    updates['/dest_lng'] = mDestMarker.getPosition().lng();
@@ -562,6 +565,8 @@ function getUserStateRecord() {
 
          PICKUP_ADDRESS_FIELD.readOnly = false;
          DEST_ADDRESS_FIELD.readOnly = false;
+         DATE_TIME_FIELD.readOnly = false;
+
          USER_MESSAGE_HEADING.innerHTML = "Where are you?";
 
       } else if (mStatus == "pending") {
@@ -579,16 +584,14 @@ function getUserStateRecord() {
          showProgressBar();
          PICKUP_ADDRESS_FIELD.readOnly = true;
          DEST_ADDRESS_FIELD.readOnly = true;
+         DATE_TIME_FIELD.readOnly = true;
+
          USER_MESSAGE_HEADING.innerHTML = "You're pickup request is pending.";
 
       } else if (mStatus == "accepted") {
 
       } else {
 
-         if (mPickupMarker != null) {
-            mPickupMarker.setDraggable(false);
-         }
-         PICKUP_ADDRESS_FIELD.readOnly = true;
          USER_MESSAGE_HEADING.innerHTML = "Oops, something went wrong.";
 
       }
@@ -658,6 +661,28 @@ function getUserStateRecord() {
          CLEAR_DEST_BTN.classList.remove("show");
       }
    });
+
+   let dateTimeRecord = firebase.database().ref("/riders")
+                      .child(mUser.uid).child("date_time");
+
+   dateTimeRecord.on('value', (snapshot) => {
+      if (snapshot.exists()) {
+        DATE_TIME_FIELD.value = snapshot.val();
+      } else {
+        let defaultTime = new Date(Date.now() + 1000*60*10);
+        let offset = defaultTime.getTimezoneOffset();
+        defaultTime.setTime(defaultTime.getTime() - 1000*60*offset);
+        console.log("Timezone offset: " + offset);
+        console.log("Default pickup: " + defaultTime.toISOString().substring(0, 16));
+        DATE_TIME_FIELD.value = defaultTime.toISOString().substring(0, 16);
+        DATE_TIME_FIELD.min = defaultTime.toISOString().substring(0, 16);
+        DATE_TIME_FIELD.step = 60*15;
+
+
+      }
+
+   });
+
 
    let destinationRecord = firebase.database().ref("/riders")
                       .child(mUser.uid).child("destination");
@@ -769,6 +794,7 @@ function getUserStateRecord() {
                   showProgressBar();
                   PICKUP_ADDRESS_FIELD.readOnly = true;
                   DEST_ADDRESS_FIELD.readOnly = true;
+                  DATE_TIME_FIELD.readOnly = true;
                   USER_MESSAGE_HEADING.innerHTML = "You're pickup request is pending.";
 
                }
