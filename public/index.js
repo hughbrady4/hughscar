@@ -461,6 +461,7 @@ function requestRide() {
 
    if (mUser.isAnonymous == true) {
      userMessage("Please log in to request a ride.");
+     authenticate();
      return;
    }
 
