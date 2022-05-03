@@ -30,10 +30,16 @@ function getMessageToken() {
 
    messaging.getToken({ vapidKey: 'BMI6z7npGh-ZhjdrInd2oRKpDpy0Keu30rBzREHZVVoCEzz5zsvOQIK3evNt8yeVP_UHKul0RJH4rBT5eCK-Gpk' }).then((currentToken) => {
 
-
       if (currentToken) {
          // Send the token to your server and update the UI if necessary
-         userMessage("Got Token: " + currentToken)
+         console.log("Got Token: " + currentToken);
+         let user = firebase.auth().currentUser;
+         let tokenRef = firebase.database().ref("/tokens").child(user.uid);
+         const updates = {};
+         updates[currentToken] = true;
+         updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+         return tokenRef.update(updates);
+
       } else {
          // Show permission request UI
          console.log('No registration token available. Request permission to generate one.');
