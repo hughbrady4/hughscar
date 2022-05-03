@@ -173,8 +173,8 @@ function clearLocation(type) {
      updates['/destination' ] = null;
      updates['/dest_address'] = null;
    }
-   //updates['/status'] = null;
-
+   updates['/fare'] = null;
+   updates['/fare_length'] = null;
    updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
 
    riderRef.update(updates);
