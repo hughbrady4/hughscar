@@ -59,7 +59,11 @@ function initApp() {
          getDriverLocation();
          getDriverStatus();
          // getRiders();
+         $("#btn-signout").show();
+         $("#btn-signin").hide();
       } else {
+        $("#btn-signout").hide();
+        $("#btn-signin").show();
          // let mainContainer = document.getElementById('main_content');
          // mainContainer.classList.remove("show");
          let authContainer = document.getElementById('firebaseui-auth-container');
