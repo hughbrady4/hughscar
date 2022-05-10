@@ -33,8 +33,16 @@
 <body>
 
 
-<nav class="navbar navbar-expand-sm bg-light">
+<nav class="navbar navbar-expand-sm bg-light navbar-light">
 <a class="navbar-brand" href="/">Hugh&apos;s Car Service</a>
+
+<!-- Toggler/collapsibe Button -->
+<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
+<span class="navbar-toggler-icon"></span>
+</button>
+
+
+<div class="collapse navbar-collapse" id="collapsibleNavbar">
 <!-- Links -->
 <ul class="navbar-nav">
 
@@ -44,13 +52,14 @@
 <li class="nav-item">
 <a id="btn-signout" href="#" class="nav-link" onclick="signOut()">Logout</a>
 </li>
-<li class="nav-item">
+<!-- <li class="nav-item">
 <a id="link-ride" class="nav-link" href="/">Ride</a>
-</li>
+</li> -->
 <li class="nav-item">
 <a id="link-drive" class="nav-link" href="/driver.html">Drive</a>
 </li>
 </ul>
+</div>
 
 </nav>
 
