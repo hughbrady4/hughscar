@@ -562,61 +562,61 @@ function getUserStateRecord() {
    });
 
 
-   let statusRecord = firebase.database().ref("/riders")
-                      .child(mUser.uid).child("status");
-
-   // rideControlRecord.on('child_added', (snapshot) => {
-
-   statusRecord.on('value', (snapshot) => {
-
-      mStatus = snapshot.val();
-      console.log("Status: " + mStatus);
-
-
-      if (mStatus == null) {
-
-         if (mPickupMarker != null) {
-            mPickupMarker.setDraggable(true);
-         }
-
-         SPINNER.classList.remove("show");
-         PROGRESS.classList.remove("show");
-         // $(PROGRESS).hide();
-
-         PICKUP_ADDRESS_FIELD.readOnly = false;
-         DEST_ADDRESS_FIELD.readOnly = false;
-         DATE_TIME_FIELD.readOnly = false;
-
-         USER_MESSAGE_HEADING.innerHTML = "Where are you?";
-
-      } else if (mStatus == "pending") {
-
-         if (mPickupMarker != null) {
-            mPickupMarker.setDraggable(false);
-         }
-         if (mDestMarker != null) {
-            mDestMarker.setDraggable(false);
-         }
-
-         SPINNER.classList.add("show");
-         PROGRESS.classList.add("show");
-
-         showProgressBar();
-         PICKUP_ADDRESS_FIELD.readOnly = true;
-         DEST_ADDRESS_FIELD.readOnly = true;
-         DATE_TIME_FIELD.readOnly = true;
-
-         USER_MESSAGE_HEADING.innerHTML = "You're pickup request is pending.";
-
-      } else if (mStatus == "accepted") {
-
-      } else {
-
-         USER_MESSAGE_HEADING.innerHTML = "Oops, something went wrong.";
-
-      }
-
-   });
+   // let statusRecord = firebase.database().ref("/riders")
+   //                    .child(mUser.uid).child("status");
+   //
+   // // rideControlRecord.on('child_added', (snapshot) => {
+   //
+   // statusRecord.on('value', (snapshot) => {
+   //
+   //    mStatus = snapshot.val();
+   //    console.log("Status: " + mStatus);
+   //
+   //
+   //    if (mStatus == null) {
+   //
+   //       if (mPickupMarker != null) {
+   //          mPickupMarker.setDraggable(true);
+   //       }
+   //
+   //       SPINNER.classList.remove("show");
+   //       PROGRESS.classList.remove("show");
+   //       // $(PROGRESS).hide();
+   //
+   //       PICKUP_ADDRESS_FIELD.readOnly = false;
+   //       DEST_ADDRESS_FIELD.readOnly = false;
+   //       DATE_TIME_FIELD.readOnly = false;
+   //
+   //       USER_MESSAGE_HEADING.innerHTML = "Where are you?";
+   //
+   //    } else if (mStatus == "pending") {
+   //
+   //       if (mPickupMarker != null) {
+   //          mPickupMarker.setDraggable(false);
+   //       }
+   //       if (mDestMarker != null) {
+   //          mDestMarker.setDraggable(false);
+   //       }
+   //
+   //       SPINNER.classList.add("show");
+   //       PROGRESS.classList.add("show");
+   //
+   //       showProgressBar();
+   //       PICKUP_ADDRESS_FIELD.readOnly = true;
+   //       DEST_ADDRESS_FIELD.readOnly = true;
+   //       DATE_TIME_FIELD.readOnly = true;
+   //
+   //       USER_MESSAGE_HEADING.innerHTML = "You're pickup request is pending.";
+   //
+   //    } else if (mStatus == "accepted") {
+   //
+   //    } else {
+   //
+   //       USER_MESSAGE_HEADING.innerHTML = "Oops, something went wrong.";
+   //
+   //    }
+   //
+   // });
 
 
    let riderLocRecord = firebase.database().ref("/riders")
