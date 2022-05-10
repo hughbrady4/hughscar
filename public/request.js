@@ -16,46 +16,15 @@ firebase.initializeApp(firebaseConfig);
 firebase.analytics();
 //console.log(firebase);
 
-var data = {lat: null, lng: null, name: null, timestamp: null};
-var startTime = new Date().getTime();
 
-var userLocs = firebase.database().ref("user-locs");
 
-var mUserLat;
-var mUserLng;
-var mUser;
-
-var mMap;
-var userLoc;
-let driverMarkers = [];
-let mDirections = [];
-let userMarkers = [];
-let infoWindows = [];
-let infoWindow;
-var lastZoom;
-const SERVICE_AREA_BOUNDS = {
-   north: 34.23570153604349,
-   south: 31.52826999601207,
-   west: -101.33952345209524,
-   east: -92.57243360834524,
-};
-const SW = {
-  lat: 31.52826999601207,
-  lng: -101.33952345209524,
-}
-const NE = {
-  lat: 34.23570153604349,
-  lng: -92.57243360834524,
-}
-
-const labels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-let labelIndex = 0;
-
-var directionsService;
-var directionsRenderer;
-var distanceService;
-var geoCoder;
-let browserLocation;
+const AUTH_CONTAINER = document.getElementById('firebaseui-auth-container');
+let mUser;
+let mMap;
+let mPickupLoc;
+let mDestLoc;
+let mDirectionsService;
+let mDirectionsRenderer;
 let mRequestId;
 
 function initApp() {
