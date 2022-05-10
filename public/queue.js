@@ -53,13 +53,14 @@ function getMessageToken() {
 function readRequests() {
    let user = firebase.auth().currentUser;
    if (!user) {
-      errorMessage("Login required to view requests");
+      userMessage("Login required to view requests");
       return;
    }
 
    let openRequests = firebase.database()
-      .ref("/requests/");
-      // .orderByChild("status").equalTo("pending");
+      .ref("/requests/")
+      .orderByChild("pickup_time");
+      // .equalTo("pending");
       // .orderByChild("/startedAt/");
 
    openRequests.on('child_added', (data) => {
@@ -91,7 +92,7 @@ function readRequests() {
       updated.setTime(data.val().updated);
       dateString = updated.toLocaleString();
 
-      newCol1.innerHTML = dateString;
+      newCol1.innerHTML = data.val().pickup_time;
       newCol2.innerHTML = data.val().phone;
       newCol3.innerHTML = data.val().pickup_address;
       newCol4.innerHTML = data.val().dest_address;
@@ -110,10 +111,9 @@ function readRequests() {
          let key = data.key;
          let driverName = data.val().username;
 
-         // errorMessage(key);
-         errorMessage(data.val());
+         window.location.href = "/request.html?request=" + key;
+         // window.open("/request.html?request=" + key);
 
-         window.open("/request.html?request=" + key);
 
          console.log(data.val());
       });
@@ -181,7 +181,6 @@ function initAuth() {
 
 
          readRequests();
-         getMessageToken();
 
       } else {
 
@@ -207,16 +206,4 @@ function userMessage(message) {
 
    // After 3 seconds, remove the show class from DIV
    setTimeout(function(){ sb.classList.remove("show"); }, 3000);
-}
-
-function errorMessage(message) {
-   // Get the snackbar DIV
-   let sb = document.getElementById("snackbar");
-   sb.innerHTML = message;
-   console.log(message);
-   // Add the "show" class to DIV
-   sb.className = "show";
-
-   // After 3 seconds, remove the show class from DIV
-   setTimeout(function(){ sb.className = sb.className.replace("show", ""); }, 3000);
 }
