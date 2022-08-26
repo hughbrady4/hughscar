@@ -1,3 +1,6 @@
+// import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.9.2/firebase-app.js';
+
+
 
 var firebaseConfig = {
    apiKey: "AIzaSyCj2ojD-AObyfiP-aTl6eRMnZNt2TrX__w",
@@ -10,10 +13,17 @@ var firebaseConfig = {
    measurementId: "G-9MPTSJEV3K"
 };
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-firebase.analytics();
+const firebaseApp = firebase.initializeApp(firebaseConfig);
+const auth = firebaseApp.auth();
 
+
+
+
+// Initialize Firebase
+// initializeApp(firebaseConfig);
+firebaseApp.analytics();
+
+var worker;
 let mMap;
 const mRiderQueue = new Map();
 let mDriverMarker;
@@ -21,13 +31,46 @@ let mInfoWindow;
 let mUser;
 let mUserLat;
 let mUserLng;
+
+const messaging = firebaseApp.messaging();
+
+messaging.onMessage((payload) => {
+   console.log("Message: ", payload);
+});
+
+
 const PICKUP_ADDRESS_FIELD = document.getElementById("pickup_address");
 const DEST_ADDRESS_FIELD = document.getElementById("dest_address");
 const RIDER_PHONE_FIELD = document.getElementById("rider_phone");
 
+const ONLINE_BTN = document.createElement("button");
+ONLINE_BTN.classList.add("btn");
+ONLINE_BTN.classList.add("btn-primary");
+ONLINE_BTN.innerHTML = "Go Online"
 
+const OFFLINE_BTN = document.createElement("button");
+OFFLINE_BTN.classList.add("btn");
+OFFLINE_BTN.classList.add("btn-primary");
+OFFLINE_BTN.innerHTML = "Go Offline"
 
 function initApp() {
+   let zoom = 11;
+   if (mUserLat == null || mUserLng == null ) {
+      mUserLat = 38.87504573180474;
+      mUserLng = -104.73386842314846;
+      zoom = 5;
+   }
+
+   mMap = new google.maps.Map(document.getElementById("map"), {
+      streetViewControl: false,
+      fullscreenControl: false,
+      mapTypeControl: false,
+      gestureHandling: "cooperative",
+      center: {lat: mUserLat, lng: mUserLng },
+      zoom: zoom,
+
+   });
+
    let ui = new firebaseui.auth.AuthUI(firebase.auth());
 
    let uiConfig = {
@@ -49,14 +92,14 @@ function initApp() {
       //privacyPolicyUrl: '<your-privacy-policy-url>'
    };
 
-   firebase.auth().onAuthStateChanged((user) => {
+   auth.onAuthStateChanged((user) => {
       if (user) {
          mUser = user;
          let authContainer = document.getElementById('firebaseui-auth-container');
          authContainer.classList.remove("show");
          // let mainContainer = document.getElementById('main_content');
          // mainContainer.classList.add("show");
-         getDriverLocation();
+         //getDriverLocation();
          getDriverStatus();
          // getRiders();
          $("#btn-signout").show();
@@ -72,32 +115,15 @@ function initApp() {
       }
    });
 
-   let zoom = 11;
-   if (mUserLat == null || mUserLng == null ) {
-     mUserLat = 38.87504573180474;
-     mUserLng = -104.73386842314846;
-     zoom = 5;
-   }
-
-   mMap = new google.maps.Map(document.getElementById("map"), {
-      streetViewControl: false,
-      fullscreenControl: false,
-      mapTypeControl: false,
-      gestureHandling: "cooperative",
-      center: {lat: mUserLat, lng: mUserLng },
-      zoom: zoom,
-
-   });
-
 
 
 }
 
-function goOnline() {
+ONLINE_BTN.onclick = function() {
 
    let driver = {
       updated: firebase.database.ServerValue.TIMESTAMP,
-      last_loc: {lat: mUserLat, lng: mUserLng },
+      //last_loc: {lat: mUserLat, lng: mUserLng },
       status: "online",
    };
 
@@ -105,15 +131,17 @@ function goOnline() {
       .ref("drivers/" + firebase.auth().currentUser.uid);
    driverRef.set(driver);
 
-   Notification.requestPermission().then(function(result) {
-      console.log(result);
-   });
+   requestLocation();
+
+   // Notification.requestPermission().then(function(result) {
+   //    console.log(result);
+   // });
 
 }
 
 
 
-function goOffline() {
+OFFLINE_BTN.onclick = function() {
 
    let driver = {
       updated: firebase.database.ServerValue.TIMESTAMP,
@@ -132,8 +160,6 @@ function requestLocation() {
      navigator.geolocation.getCurrentPosition((position) => {
         mUserLat = position.coords.latitude;
         mUserLng = position.coords.longitude;
-        //console.log(mUserLat);
-        //console.log(mUserLng);
 
         let driverRef = firebase.database()
            .ref("drivers/" + firebase.auth().currentUser.uid).child("last_loc");
@@ -189,7 +215,7 @@ function setDriverMarker(atLatLng) {
 
 }
 
-function getDriverLocation() {
+function setDriverLocCallback() {
 
    let driverControlRecord = firebase.database().ref("/drivers")
                       .child(mUser.uid).child("last_loc");
@@ -217,30 +243,47 @@ function getDriverLocation() {
 
 function getDriverStatus() {
 
+
    let driverStatusRecord = firebase.database().ref("/drivers")
                      .child(mUser.uid).child("status");
 
    driverStatusRecord.on('value', (snapshot) => {
+
+      while (mMap.controls[google.maps.ControlPosition.TOP_CENTER].length > 0) {
+         mMap.controls[google.maps.ControlPosition.TOP_CENTER].pop();
+      }
+
       if (snapshot.exists()) {
          mStatus = snapshot.val();
          console.log(mStatus);
-         if (mStatus == null) {
-            $("#btn-group-offline").hide();
-            $("#btn-group-online").show();
+         if (mStatus == "online") {
+            setDriverLocCallback();
 
-         } else if (mStatus == "online") {
-            $("#btn-group-offline").show();
-            $("#btn-group-online").hide();
-            getRequests();
+            requestPermission();
+            getMessageToken();
+
+            if (typeof(worker) == "undefined") {
+               worker = new Worker("driver_location.js");
+            }
+
+            mMap.controls[google.maps.ControlPosition.TOP_CENTER].push(OFFLINE_BTN);
+
+            // $("#btn-group-offline").show();
+            // $("#btn-group-online").hide();
+            // getRequests();
+
          } else if (mStatus == "offline") {
+
             $("#btn-group-online").show();
             $("#btn-group-offline").hide();
-            let riders = firebase.database()
-               .ref("/requests");
-               // .orderByChild("status")
-               // .equalTo("pending");
-               // .limitToFirst(1);
-            riders.off();
+
+            mMap.controls[google.maps.ControlPosition.TOP_CENTER].push(ONLINE_BTN);
+
+            if (typeof(worker) != "undefined") {
+            worker.terminate();
+            worker = undefined;
+          }
+
          } else {
             $("#btn-group-offline").show();
             $("#btn-group-online").show();
@@ -248,6 +291,42 @@ function getDriverStatus() {
       }
    });
 }
+
+function getMessageToken() {
+
+   messaging.getToken({ vapidKey: 'BMI6z7npGh-ZhjdrInd2oRKpDpy0Keu30rBzREHZVVoCEzz5zsvOQIK3evNt8yeVP_UHKul0RJH4rBT5eCK-Gpk' }).then((currentToken) => {
+
+      if (currentToken) {
+         // Send the token to your server and update the UI if necessary
+         console.log("Got Token: " + currentToken);
+         let user = firebase.auth().currentUser;
+         let tokenRef = firebase.database().ref("/tokens").child(user.uid);
+         const updates = {};
+         updates[currentToken] = true;
+         updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+         return tokenRef.update(updates);
+
+      } else {
+         // Show permission request UI
+         console.log('No registration token available. Request permission to generate one.');
+      }
+   }).catch((err) => {
+      console.log('An error occurred while retrieving token. ', err);
+   });
+
+}
+
+function requestPermission() {
+  console.log('Requesting permission...');
+  Notification.requestPermission().then((permission) => {
+    if (permission === 'granted') {
+      console.log('Notification permission granted.');
+    }
+  });
+}
+
+
+
 
 
 function getRequests() {

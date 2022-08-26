@@ -71,9 +71,9 @@ function readRequests() {
       const newCol1 = document.createElement("td");
       const newCol2 = document.createElement("td");
       const newCol3 = document.createElement("td");
-      const newCol4 = document.createElement("td");
-      const newCol5 = document.createElement("td");
-      const newCol6 = document.createElement("td");
+      // const newCol4 = document.createElement("td");
+      // const newCol5 = document.createElement("td");
+      // const newCol6 = document.createElement("td");
 
       let formatter = new Intl.NumberFormat('en-US', {
          style: 'currency',
@@ -85,26 +85,30 @@ function readRequests() {
       });
 
       // formatter.format(2500);
+      let fareAmt = 0;
+      if (typeof(data.val().fare) != "undefined") {
+         fareAmt = data.val().fare.fare_amount;
+      }
 
-      let fareStr = formatter.format(data.val().fare.fare_amount);
+      let fareStr = formatter.format(fareAmt);
 
       let updated = new Date();
       updated.setTime(data.val().updated);
       dateString = updated.toLocaleString();
 
       newCol1.innerHTML = data.val().pickup_time;
-      newCol2.innerHTML = data.val().phone;
-      newCol3.innerHTML = data.val().pickup_address;
-      newCol4.innerHTML = data.val().dest_address;
-      newCol5.innerHTML = fareStr;
-      newCol6.innerHTML = data.val().status;
+      // newCol2.innerHTML = data.val().phone;
+      // newCol3.innerHTML = data.val().pickup_address;
+      // newCol4.innerHTML = data.val().dest_address;
+      newCol2.innerHTML = fareStr;
+      newCol3.innerHTML = data.val().status;
 
       newRow.appendChild(newCol1);
       newRow.appendChild(newCol2);
       newRow.appendChild(newCol3);
-      newRow.appendChild(newCol4);
-      newRow.appendChild(newCol5);
-      newRow.appendChild(newCol6);
+      // newRow.appendChild(newCol4);
+      // newRow.appendChild(newCol5);
+      // newRow.appendChild(newCol6);
 
       newRow.addEventListener('click', () => {
 

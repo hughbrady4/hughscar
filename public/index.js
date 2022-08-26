@@ -21,7 +21,6 @@ let mDistance;
 let mRates;
 let mFare;
 let mDestMarker;
-let mDrivers = new Map();
 let mDirectionsService;
 let mDirectionsRenderer;
 let mPickupRenderer;
@@ -29,13 +28,14 @@ let mLocationButton;
 let mRequestInProgress = false;
 let mRideRequestRef;
 let mDestInfoWindow;
-let mDriverInfoWindow;
+
+const DRIVERS = new Map();
+const INFO_WINDOWS = new Map();
 
 const USER_MESSAGE_HEADING = document.getElementById("h5-main-text");
 const PICKUP_ADDRESS_FIELD = document.getElementById("pickup");
 const DEST_ADDRESS_FIELD = document.getElementById("destination");
-const DATE_TIME_FIELD = document.getElementById("datetime");
-
+//const DATE_TIME_FIELD = document.getElementById("datetime");
 const LOCATION_BUTTON = document.getElementById("btn-group-location");
 const LOC_DEST_BUTTON = document.getElementById("btn-group-loc-dest");
 const CLEAR_BUTTON = document.getElementById("btn-group-clear");
@@ -70,6 +70,7 @@ function authenticate() {
          signInFailure: function(error) {
             // For merge conflicts, the error.code will be
             // 'firebaseui/anonymous-upgrade-merge-conflict'.
+            console.log(error);
             if (error.code != 'firebaseui/anonymous-upgrade-merge-conflict') {
                return Promise.resolve();
             }
@@ -117,7 +118,7 @@ function authenticate() {
             });
          }
       },
-      autoUpgradeAnonymousUsers: true,
+      // autoUpgradeAnonymousUsers: true,
       signInFlow: 'popup',
       signInOptions: [
          //firebase.auth.EmailAuthProvider.PROVIDER_ID,
@@ -131,6 +132,12 @@ function authenticate() {
    };
 
    ui.start('#firebaseui-auth-container', uiConfig);
+
+}
+
+function callDriver() {
+
+   window.open('tel:2144333268');
 
 }
 
@@ -257,7 +264,7 @@ function computeFare() {
 
    mDestInfoWindow.open({
       anchor: mDestMarker,
-      mMap,
+      map: mMap,
       shouldFocus: false,
    });
 
@@ -266,7 +273,7 @@ function computeFare() {
 function initApp() {
 
    //default location and zoom for map
-   let zoom = 9;
+   let zoom = 5;
    // if (mUserLat == null || mUserLng == null ) {
    //   mUserLat = 38.2451723695606;
    //   mUserLng = -104.73386842314846;
@@ -354,6 +361,7 @@ function initAuth() {
       riderRef.update(updates).then(() => {
          getUserStateRecord();
          getDriverRecord();
+         getDrivers();
       });
 
    });
@@ -474,11 +482,13 @@ function requestRide() {
    updates['/fare' ] = mFare;
    updates['/name' ] = mUser.displayName;
    updates['/phone'] = mUser.phoneNumber;
+   updates['/pickup_loc'] = mPickupMarker.getPosition().toJSON();
    updates['/pickup_lat'] = mPickupMarker.getPosition().lat();
    updates['/pickup_lng'] = mPickupMarker.getPosition().lng();
    updates['/pickup_address'] = PICKUP_ADDRESS_FIELD.value;
-   updates['/pickup_time'] = DATE_TIME_FIELD.value;
+   //updates['/pickup_time'] = DATE_TIME_FIELD.value;
    updates['/rider_uid'] = mUser.uid;
+   updates['/dest_loc'] = mDestMarker.getPosition().toJSON();
    updates['/dest_lat'] = mDestMarker.getPosition().lat();
    updates['/dest_lng'] = mDestMarker.getPosition().lng();
    updates['/dest_address'] = DEST_ADDRESS_FIELD.value;
@@ -636,12 +646,15 @@ function getUserStateRecord() {
            //creates a new marker
            setPickupMarker(newLoc);
          }
+         // requestDriverLoc();
       } else {
          if (mPickupMarker != null) {
             mPickupMarker.setMap(null);
             mPickupMarker = null;
          }
+         //routePickup(null);
       }
+      routePickup();
       routeFare();
 
    });
@@ -682,26 +695,26 @@ function getUserStateRecord() {
       }
    });
 
-   let dateTimeRecord = firebase.database().ref("/riders")
-                      .child(mUser.uid).child("date_time");
-
-   dateTimeRecord.on('value', (snapshot) => {
-      if (snapshot.exists()) {
-        DATE_TIME_FIELD.value = snapshot.val();
-      } else {
-        let defaultTime = new Date(Date.now() + 1000*60*10);
-        let offset = defaultTime.getTimezoneOffset();
-        defaultTime.setTime(defaultTime.getTime() - 1000*60*offset);
-        console.log("Timezone offset: " + offset);
-        console.log("Default pickup: " + defaultTime.toISOString().substring(0, 16));
-        DATE_TIME_FIELD.value = defaultTime.toISOString().substring(0, 16);
-        DATE_TIME_FIELD.min = defaultTime.toISOString().substring(0, 16);
-        DATE_TIME_FIELD.step = 60*15;
-
-
-      }
-
-   });
+   // let dateTimeRecord = firebase.database().ref("/riders")
+   //                    .child(mUser.uid).child("date_time");
+   //
+   // dateTimeRecord.on('value', (snapshot) => {
+   //    if (snapshot.exists()) {
+   //      DATE_TIME_FIELD.value = snapshot.val();
+   //    } else {
+   //      let defaultTime = new Date(Date.now() + 1000*60*10);
+   //      let offset = defaultTime.getTimezoneOffset();
+   //      defaultTime.setTime(defaultTime.getTime() - 1000*60*offset);
+   //      console.log("Timezone offset: " + offset);
+   //      console.log("Default pickup: " + defaultTime.toISOString().substring(0, 16));
+   //      DATE_TIME_FIELD.value = defaultTime.toISOString().substring(0, 16);
+   //      DATE_TIME_FIELD.min = defaultTime.toISOString().substring(0, 16);
+   //      DATE_TIME_FIELD.step = 60*15;
+   //
+   //
+   //    }
+   //
+   // });
 
 
    let destinationRecord = firebase.database().ref("/riders")
@@ -792,14 +805,27 @@ function getUserStateRecord() {
 
          requestRecordStatus.on('value', (snapshot) => {
             if (snapshot.exists()) {
-               console.log("Request status: " + snapshot.val());
-               if (mStatus == "accepted") {
+               let requestStatus = snapshot.val();
+               console.log("Request status: " + requestStatus);
+               if (requestStatus == "accepted") {
                  PROGRESS.classList.remove("show");
-                 SPINNER.classList.add("show");
+                 SPINNER.classList.remove("show");
+                 PICKUP_ADDRESS_FIELD.readOnly = true;
+                 DEST_ADDRESS_FIELD.readOnly = true;
+                 //DATE_TIME_FIELD.readOnly = true;
+
+                 if (mPickupMarker != null) {
+                    mPickupMarker.setDraggable(false);
+                 }
+                 if (mDestMarker != null) {
+                    mDestMarker.setDraggable(false);
+                 }
+
+
 
                  USER_MESSAGE_HEADING.innerHTML = "You're pickup request is accepted.";
 
-               } else if (mStatus == "pending") {
+               } else if (requestStatus == "pending") {
 
                   if (mPickupMarker != null) {
                      mPickupMarker.setDraggable(false);
@@ -808,13 +834,13 @@ function getUserStateRecord() {
                      mDestMarker.setDraggable(false);
                   }
 
-                  SPINNER.classList.add("show");
+                  SPINNER.classList.remove("show");
                   PROGRESS.classList.add("show");
 
                   showProgressBar();
                   PICKUP_ADDRESS_FIELD.readOnly = true;
                   DEST_ADDRESS_FIELD.readOnly = true;
-                  DATE_TIME_FIELD.readOnly = true;
+                  //DATE_TIME_FIELD.readOnly = true;
                   USER_MESSAGE_HEADING.innerHTML = "You're pickup request is pending.";
 
                }
@@ -822,18 +848,7 @@ function getUserStateRecord() {
             }
          });
 
-         let requestDriverLoc = firebase.database().ref("/requests")
-                            .child(mRideRequestRef).child("driver_loc");
 
-         requestDriverLoc.on('value', (snapshot) => {
-            if (snapshot.exists()) {
-               let loc = snapshot.val();
-               console.log(loc);
-               routePickup(loc);
-            } else {
-               routePickup(null);
-            }
-         });
 
 
 
@@ -849,6 +864,30 @@ function getUserStateRecord() {
             mMap.controls[google.maps.ControlPosition.TOP_CENTER].pop();
             mRequestInProgress = false;
          }
+
+         if (mPickupMarker != null) {
+            mPickupMarker.setDraggable(true);
+         }
+
+         if (mDestMarker != null) {
+            mDestMarker.setDraggable(true);
+         }
+
+         SPINNER.classList.remove("show");
+         PROGRESS.classList.remove("show");
+         // $(PROGRESS).hide();
+
+         PICKUP_ADDRESS_FIELD.readOnly = false;
+         DEST_ADDRESS_FIELD.readOnly = false;
+         //DATE_TIME_FIELD.readOnly = false;
+
+         // LOCATION_BUTTON.classList.remove("show");
+         // CLEAR_BUTTON.classList.remove("show");
+         // LOC_DEST_BUTTON.classList.remove("show");
+         // CLEAR_DEST_BTN.classList.remove("show");
+
+
+         USER_MESSAGE_HEADING.innerHTML = "Where are you?";
       }
    });
 
@@ -876,7 +915,8 @@ function getDrivers() {
             icon: "/images/icons8-car-24.png"
          });
 
-         mDrivers.set(key, mDriverMarker);
+         DRIVERS.set(key, mDriverMarker);
+         routePickup();
       }
    });
 
@@ -888,8 +928,10 @@ function getDrivers() {
          let key = snapshot.key;
          let driverLoc = snapshot.val().last_loc;
 
-         let marker = mDrivers.get(key);
+         let marker = DRIVERS.get(key);
          marker.setPosition(driverLoc);
+         routePickup();
+
 
       }
    });
@@ -902,10 +944,11 @@ function getDrivers() {
          let key = snapshot.key;
          let driverLoc = snapshot.val().last_loc;
 
-         let marker = mDrivers.get(key);
+         let marker = DRIVERS.get(key);
 
          marker.setMap(null);
-         mDrivers.delete(key);
+         DRIVERS.delete(key);
+         routePickup();
 
       }
    });
@@ -1109,13 +1152,20 @@ function routeFare() {
    }
 }
 
-function routePickup(driverPosition) {
+function routePickup() {
 
+   let key = "okqT8SrEguQxE4PS1YoQnJ6X1923";
+   let driverMarker = DRIVERS.get(key);
 
-   if (mPickupMarker != null && driverPosition != null) {
+   let oldInfoWindow = INFO_WINDOWS.get(key);
+   if (oldInfoWindow != null) {
+      oldInfoWindow.close();
+   }
+
+   if (mPickupMarker != null && driverMarker != null) {
 
       let request = {
-         origin: driverPosition,
+         origin: driverMarker.getPosition(),
          destination: mPickupMarker.getPosition(),
          //waypoints: waypts,
          //optimizeWaypoints: true,
@@ -1128,14 +1178,34 @@ function routePickup(driverPosition) {
             mPickupRenderer.setDirections(response);
             mPickupRenderer.setMap(mMap);
             console.log(response.routes[0].legs[0].duration);
+            let pickupDistance = response.routes[0].legs[0].distance.text;
+
+            const contentString =
+               '<div id="content">' +
+               '<div id="siteNotice">' +
+               "</div>" +
+               // '<h5 id="firstHeading" class="firstHeading">Hello, Im currently online.</h5>' +
+
+               '<div id="bodyContent">' +
+               '<button id="btn-call-driver" class="btn btn-primary" onclick="callDriver()">Call Now</button>' +
+               "<p>I'm currently online and <b>" + pickupDistance + "</b> away.</p>" +
+               "</div>" +
+               "</div>";
+
+
             let driverInfowindow = new google.maps.InfoWindow({
                map: mMap,
-               anchor: mPickupMarker,
-               content: "Hello, I'm currently " + response.routes[0].legs[0].duration.text + " away.",
-               position: driverPosition,
+               content: contentString,
+               // content: "Hello, I'm currently " + response.routes[0].legs[0].duration.text + " away.",
+               // position: driverPosition,
             });
-            driverInfowindow.open(mMap);
 
+            INFO_WINDOWS.set(key, driverInfowindow);
+
+            driverInfowindow.open({
+               anchor: driverMarker,
+               shouldFocus: false,
+            });
 
 
          }
