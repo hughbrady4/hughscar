@@ -1,3 +1,4 @@
+
 let firebaseConfig = {
    apiKey: "AIzaSyCj2ojD-AObyfiP-aTl6eRMnZNt2TrX__w",
    authDomain: "hughscar-6ac7d.firebaseapp.com",
@@ -520,10 +521,17 @@ function getDriverRecord() {
    let driverRecord = firebase.database().ref("/drivers/")
                       .child(mUser.uid);
 
-   driverRecord.on('value', (snapshot) => {
-      console.log(snapshot.val());
-      if (snapshot.exists()) {
+   driverRecord.on('value', (driver) => {
+      console.log(driver.val());
+      if (driver.exists()) {
          $("#link-drive").show();
+         let status = driver.val().status;
+         if (status == "online") {
+           location.replace("https://www.hughscar.com/driver.html");
+         } else {
+           $("#link-drive").show();
+
+         }
          //$("#col-drive").css("display", "inline");
       } else {
          $("#link-drive").hide();
