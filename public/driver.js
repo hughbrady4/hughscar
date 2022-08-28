@@ -1,7 +1,5 @@
 // import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.9.2/firebase-app.js';
 
-
-
 var firebaseConfig = {
    apiKey: "AIzaSyCj2ojD-AObyfiP-aTl6eRMnZNt2TrX__w",
    authDomain: "hughscar-6ac7d.firebaseapp.com",
@@ -15,8 +13,6 @@ var firebaseConfig = {
 
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 const auth = firebaseApp.auth();
-
-
 
 
 // Initialize Firebase
@@ -46,12 +42,58 @@ const RIDER_PHONE_FIELD = document.getElementById("rider_phone");
 const ONLINE_BTN = document.createElement("button");
 ONLINE_BTN.classList.add("btn");
 ONLINE_BTN.classList.add("btn-primary");
-ONLINE_BTN.innerHTML = "Go Online"
+ONLINE_BTN.innerHTML = "Go Online";
+ONLINE_BTN.onclick = function() {
+
+   let driver = {
+      updated: firebase.database.ServerValue.TIMESTAMP,
+      //last_loc: {lat: mUserLat, lng: mUserLng },
+      status: "online",
+   };
+
+   let driverRef = firebase.database()
+      .ref("drivers/" + firebase.auth().currentUser.uid);
+   driverRef.set(driver);
+
+   requestLocation();
+
+   // Notification.requestPermission().then(function(result) {
+   //    console.log(result);
+   // });
+
+};
+
+
+
+
 
 const OFFLINE_BTN = document.createElement("button");
 OFFLINE_BTN.classList.add("btn");
 OFFLINE_BTN.classList.add("btn-primary");
-OFFLINE_BTN.innerHTML = "Go Offline"
+OFFLINE_BTN.innerHTML = "Go Offline";
+OFFLINE_BTN.onclick = function() {
+
+   let driver = {
+      updated: firebase.database.ServerValue.TIMESTAMP,
+      last_loc: {lat: mUserLat, lng: mUserLng },
+      status: "offline",
+   };
+
+   let driverRef = firebase.database()
+      .ref("drivers/" + firebase.auth().currentUser.uid);
+   driverRef.set(driver);
+
+};
+
+const BTN_LOC = document.createElement("button");
+BTN_LOC.classList.add("btn");
+BTN_LOC.classList.add("btn-primary");
+BTN_LOC.innerHTML = "Location";
+BTN_LOC.onclick = function() {
+  requestLocation();
+
+
+}
 
 function initApp() {
    let zoom = 11;
@@ -101,10 +143,15 @@ function initApp() {
          // mainContainer.classList.add("show");
          //getDriverLocation();
          getDriverStatus();
+         mMap.controls[google.maps.ControlPosition.TOP_RIGHT].push(BTN_LOC);
          // getRiders();
          $("#btn-signout").show();
          $("#btn-signin").hide();
       } else {
+        while (mMap.controls[google.maps.ControlPosition.TOP_RIGHT].length > 0) {
+           mMap.controls[google.maps.ControlPosition.TOP_RIGHT].pop();
+        }
+
         $("#btn-signout").hide();
         $("#btn-signin").show();
          // let mainContainer = document.getElementById('main_content');
@@ -119,41 +166,11 @@ function initApp() {
 
 }
 
-ONLINE_BTN.onclick = function() {
-
-   let driver = {
-      updated: firebase.database.ServerValue.TIMESTAMP,
-      //last_loc: {lat: mUserLat, lng: mUserLng },
-      status: "online",
-   };
-
-   let driverRef = firebase.database()
-      .ref("drivers/" + firebase.auth().currentUser.uid);
-   driverRef.set(driver);
-
-   requestLocation();
-
-   // Notification.requestPermission().then(function(result) {
-   //    console.log(result);
-   // });
-
-}
 
 
 
-OFFLINE_BTN.onclick = function() {
 
-   let driver = {
-      updated: firebase.database.ServerValue.TIMESTAMP,
-      last_loc: {lat: mUserLat, lng: mUserLng },
-      status: "offline",
-   };
 
-   let driverRef = firebase.database()
-      .ref("drivers/" + firebase.auth().currentUser.uid);
-   driverRef.set(driver);
-
-}
 
 function requestLocation() {
   if (navigator.geolocation) {
@@ -280,9 +297,9 @@ function getDriverStatus() {
             mMap.controls[google.maps.ControlPosition.TOP_CENTER].push(ONLINE_BTN);
 
             if (typeof(worker) != "undefined") {
-            worker.terminate();
-            worker = undefined;
-          }
+               worker.terminate();
+               worker = undefined;
+            }
 
          } else {
             $("#btn-group-offline").show();

@@ -310,12 +310,6 @@ function initApp() {
       map: mMap,
    });
 
-   initAuth();
-
-}
-
-function initAuth() {
-
    firebase.auth().onAuthStateChanged((user) => {
 
       if (user == null) {
@@ -527,6 +521,7 @@ function getDriverRecord() {
          $("#link-drive").show();
          let status = driver.val().status;
          if (status == "online") {
+           //userMessage("You are currently online to drive.");
            location.replace("https://www.hughscar.com/driver.html");
          } else {
            $("#link-drive").show();
