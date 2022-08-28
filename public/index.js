@@ -46,6 +46,17 @@ const PROGRESS = document.getElementById("requestProgress");
 const PROGRESS_BAR = document.getElementById("requestBar");
 const AUTH_CONTAINER = document.getElementById('firebaseui-auth-container');
 
+const BTN_LOC = document.createElement("button");
+BTN_LOC.classList.add("btn");
+BTN_LOC.classList.add("btn-primary");
+BTN_LOC.innerHTML = "Location";
+BTN_LOC.onclick = function() {
+  requestLocation();
+
+
+}
+
+
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();
@@ -333,6 +344,8 @@ function initApp() {
 
       AUTH_CONTAINER.classList.remove("show");
       mUser =  user;
+
+      mMap.controls[google.maps.ControlPosition.TOP_RIGHT].push(BTN_LOC);
 
       if (mUser.isAnonymous) {
          //userMessage("You are still logged in anonymously.");
@@ -967,7 +980,7 @@ function requestLocation(type) {
          let lat = position.coords.latitude;
          let lng = position.coords.longitude;
 
-         if (type == 'pickup') {
+         if (type == 'pickup' || type == null) {
             mUserLat = lat;
             mUserLng = lng;
             //console.log(mUserLat);
