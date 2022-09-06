@@ -49,7 +49,8 @@ const AUTH_CONTAINER = document.getElementById('firebaseui-auth-container');
 const BTN_LOC = document.createElement("button");
 BTN_LOC.classList.add("btn");
 BTN_LOC.classList.add("btn-primary");
-BTN_LOC.innerHTML = "Location";
+BTN_LOC.classList.add("custom-map-control-button");
+BTN_LOC.innerHTML = "<i class='material-icons md-18'>my_location</i>";
 BTN_LOC.onclick = function() {
   requestLocation();
 
