@@ -62,6 +62,10 @@ BTN_LOC.onclick = function() {
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();
 
+function addDestinationMarker() {
+
+}
+
 function authenticate() {
 
    AUTH_CONTAINER.classList.add("show");
