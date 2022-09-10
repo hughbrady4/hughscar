@@ -27,3 +27,24 @@ exports.newRequest = functions.database.ref("/requests/{requestId}")
 
       return admin.messaging().sendToDevice(deviceToken, payload);
     });
+
+
+/**
+ * Triggers when the app is opened the first time in a user device and sends a
+ * notification to your developer device.
+ *
+ * The device model name, the city and the country of the user are sent in
+ * the notification message
+ */
+exports.appEngagement = functions.analytics.event("user_engagement")
+    .onLog((event) => {
+      // const user = event.user;
+      const payload = {
+        notification: {
+          title: "You have user engagement \uD83D\uDE43",
+          body: "Test",
+        },
+      };
+
+      return admin.messaging().sendToDevice(deviceToken, payload);
+    });
