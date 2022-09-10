@@ -42,6 +42,7 @@ const RIDER_PHONE_FIELD = document.getElementById("rider_phone");
 const ONLINE_BTN = document.createElement("button");
 ONLINE_BTN.classList.add("btn");
 ONLINE_BTN.classList.add("btn-primary");
+ONLINE_BTN.classList.add("custom-map-control-button");
 ONLINE_BTN.innerHTML = "Go Online";
 ONLINE_BTN.onclick = function() {
 
@@ -71,6 +72,7 @@ const OFFLINE_BTN = document.createElement("button");
 OFFLINE_BTN.classList.add("btn");
 OFFLINE_BTN.classList.add("btn-primary");
 OFFLINE_BTN.innerHTML = "Go Offline";
+OFFLINE_BTN.classList.add("custom-map-control-button");
 OFFLINE_BTN.onclick = function() {
 
    let driver = {
@@ -88,6 +90,7 @@ OFFLINE_BTN.onclick = function() {
 const BTN_LOC = document.createElement("button");
 BTN_LOC.classList.add("btn");
 BTN_LOC.classList.add("btn-primary");
+BTN_LOC.classList.add("custom-map-control-button");
 BTN_LOC.innerHTML = "Location";
 BTN_LOC.onclick = function() {
   requestLocation();
