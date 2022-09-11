@@ -46,13 +46,69 @@ const PROGRESS = document.getElementById("requestProgress");
 const PROGRESS_BAR = document.getElementById("requestBar");
 const AUTH_CONTAINER = document.getElementById('firebaseui-auth-container');
 
+const BTN_PICKUP_LOC = document.getElementById("btn-location");
+BTN_PICKUP_LOC.onclick = function() {
+
+   if (mMap == null) return;
+
+   let position = mMap.getCenter().toJSON();
+   const updates = {};
+   let pickupRef = firebase.database().ref("/riders").child(mUser.uid);
+   updates['/pickup' ] = position;
+   updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+   pickupRef.update(updates).then(() => {
+      userMessage("Pickup location updated ");
+
+   });
+
+}
+
+const BTN_DEST_LOC = document.getElementById("btn-destination");
+BTN_DEST_LOC.onclick = function() {
+
+   if (mMap == null) return;
+
+   let position = mMap.getCenter().toJSON();
+   const updates = {};
+   let destinationRef = firebase.database().ref("/riders").child(mUser.uid);
+   updates['/destination' ] = position;
+   updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+   destinationRef.update(updates).then(() => {
+      userMessage("Destination location updated ");
+
+   });
+
+}
+
+
+
+
 const BTN_LOC = document.createElement("button");
 BTN_LOC.classList.add("btn");
-BTN_LOC.classList.add("btn-primary");
+BTN_LOC.classList.add("btn-light");
 BTN_LOC.classList.add("custom-map-control-button");
 BTN_LOC.innerHTML = "<i class='material-icons md-18'>my_location</i>";
 BTN_LOC.onclick = function() {
-  requestLocation();
+  if (navigator.geolocation) {
+     navigator.geolocation.getCurrentPosition((position) => {
+        let riderRef = firebase.database()
+           .ref("/riders").child(firebase.auth().currentUser.uid);
+        const updates = {};
+        let lat = position.coords.latitude;
+        let lng = position.coords.longitude;
+        updates['/last_loc' ] = {lat: lat, lng: lng };
+        updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+        riderRef.update(updates).then(() => {
+            userMessage("Location updated");
+        });
+
+     }, (error) => {
+        userMessage("Failed to get geolocation from browser");
+        console.log(error.message);
+     });
+  } else {
+     userMessage("Failed to get geolocation from browser");
+  }
 
 
 }
@@ -61,10 +117,6 @@ BTN_LOC.onclick = function() {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();
-
-function addDestinationMarker() {
-
-}
 
 function authenticate() {
 
@@ -191,7 +243,7 @@ function clearLocation(type) {
 
    const updates = {};
    if (type == 'pickup') {
-      updates['/last_loc' ] = null;
+      updates['/pickup' ] = null;
       updates['/formatted_address'] = null;
    } else if (type == 'destination') {
      updates['/destination' ] = null;
@@ -373,6 +425,11 @@ function initApp() {
       updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
       riderRef.update(updates).then(() => {
          getUserStateRecord();
+         addPickupListener();
+         addDestListener();
+         addLocListener();
+         addAddressListiner();
+         addDestAddrListener();
          getDriverRecord();
          getDrivers();
       });
@@ -400,23 +457,22 @@ function setAddress(address) {
    let geoCoder = new google.maps.Geocoder();
    //let address = PICKUP_ADDRESS_FIELD.value;
 
-   console.log(address);
+   // console.log(address);
 
    geoCoder.geocode({ address: address }, (results, status) => {
       if (status === "OK" && results[0]) {
          // console.log(results[0].geometry.location);
-         mUserLoc = results[0].geometry.location;
-         mUserLat = mUserLoc.lat();
-         mUserLng = mUserLoc.lng();
-         console.log(mUserLoc.toJSON());
+         let loc = results[0].geometry.location;
          let riderRef = firebase.database()
             .ref("/riders").child(firebase.auth().currentUser.uid);
 
          const updates = {};
-         updates['/last_loc' ] = mUserLoc.toJSON();
+         updates['/pickup' ] = loc.toJSON();
          updates['/formatted_address'] = results[0].formatted_address;
          updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
-         return riderRef.update(updates);
+         return riderRef.update(updates).then(() => {
+            userMessage("Pickup address updated");
+         });
 
       } else {
          userMessage(status);
@@ -455,18 +511,19 @@ function setDestinationAddress(address) {
             // mUserLat = loc.lat();
             // mUserLng = loc.lng();
             let destAddress = results[0].formatted_address;
-            let destination = {lat: loc.lat(), lng: loc.lng()};
 
             let riderRef = firebase.database()
                .ref("/riders").child(firebase.auth().currentUser.uid);
             // riderRef.set(location);
 
             const updates = {};
-            updates['/destination' ] = destination;
+            updates['/destination' ] = loc.toJSON();
             updates['/dest_address' ] = destAddress;
             updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
 
-            riderRef.update(updates);
+            riderRef.update(updates).then(() => {
+               userMessage("Destination address updated");
+            });;
 
          }
       } else {
@@ -572,91 +629,15 @@ function getDriverRecord() {
 
  }
 
-function getUserStateRecord() {
+function addPickupListener() {
 
-   let controlRecord = firebase.database().ref("/control-data");
+  let pickupRef = firebase.database().ref("/riders")
+                     .child(mUser.uid).child("pickup");
 
-   controlRecord.get().then((snapshot) => {
-      if (snapshot.exists()) {
-          mRates = snapshot.val();
-          console.log("Control Data: " + mRates);
-      } else {
-          mRates = null;
-      }
-      if (mRequestInProgress == false) {
-         computeFare();
-      }
-   }).then(() => {
-      console.log("Got it!");
-   }).catch((error) => {
-      userMessage(error);
-   });
-
-
-   // let statusRecord = firebase.database().ref("/riders")
-   //                    .child(mUser.uid).child("status");
-   //
-   // // rideControlRecord.on('child_added', (snapshot) => {
-   //
-   // statusRecord.on('value', (snapshot) => {
-   //
-   //    mStatus = snapshot.val();
-   //    console.log("Status: " + mStatus);
-   //
-   //
-   //    if (mStatus == null) {
-   //
-   //       if (mPickupMarker != null) {
-   //          mPickupMarker.setDraggable(true);
-   //       }
-   //
-   //       SPINNER.classList.remove("show");
-   //       PROGRESS.classList.remove("show");
-   //       // $(PROGRESS).hide();
-   //
-   //       PICKUP_ADDRESS_FIELD.readOnly = false;
-   //       DEST_ADDRESS_FIELD.readOnly = false;
-   //       DATE_TIME_FIELD.readOnly = false;
-   //
-   //       USER_MESSAGE_HEADING.innerHTML = "Where are you?";
-   //
-   //    } else if (mStatus == "pending") {
-   //
-   //       if (mPickupMarker != null) {
-   //          mPickupMarker.setDraggable(false);
-   //       }
-   //       if (mDestMarker != null) {
-   //          mDestMarker.setDraggable(false);
-   //       }
-   //
-   //       SPINNER.classList.add("show");
-   //       PROGRESS.classList.add("show");
-   //
-   //       showProgressBar();
-   //       PICKUP_ADDRESS_FIELD.readOnly = true;
-   //       DEST_ADDRESS_FIELD.readOnly = true;
-   //       DATE_TIME_FIELD.readOnly = true;
-   //
-   //       USER_MESSAGE_HEADING.innerHTML = "You're pickup request is pending.";
-   //
-   //    } else if (mStatus == "accepted") {
-   //
-   //    } else {
-   //
-   //       USER_MESSAGE_HEADING.innerHTML = "Oops, something went wrong.";
-   //
-   //    }
-   //
-   // });
-
-
-   let riderLocRecord = firebase.database().ref("/riders")
-                      .child(mUser.uid).child("last_loc");
-
-   riderLocRecord.on('value', (snapshot) => {
-      if (snapshot.exists()) {
+  pickupRef.on('value', (pickup) => {
+      if (pickup.exists()) {
          // console.log(snapshot.val());
-         let newLoc = snapshot.val();
+         let newLoc = pickup.val();
          if (mPickupMarker != null) {
             //test if location changed, in case update was from marker itself
             let oldLoc = mPickupMarker.getPosition();
@@ -668,53 +649,148 @@ function getUserStateRecord() {
            setPickupMarker(newLoc);
          }
          // requestDriverLoc();
+         LOCATION_BUTTON.classList.remove("show");
+         CLEAR_BUTTON.classList.add("show");
+         geoCodeCoordinates(newLoc, 'pickup');
       } else {
          if (mPickupMarker != null) {
             mPickupMarker.setMap(null);
             mPickupMarker = null;
          }
          //routePickup(null);
+         LOCATION_BUTTON.classList.add("show");
+         CLEAR_BUTTON.classList.remove("show");
       }
-      routePickup();
+      //routePickup();
       routeFare();
 
    });
+}
 
-   let riderAddressRecord = firebase.database().ref("/riders")
-                      .child(mUser.uid).child("formatted_address");
+function addDestListener() {
 
-   riderAddressRecord.on('value', (snapshot) => {
-      if (snapshot.exists()) {
+  let destRef = firebase.database().ref("/riders")
+                     .child(mUser.uid).child("destination");
+
+  destRef.on('value', (destination) => {
+     if (destination.exists()) {
+        // console.log(snapshot.val());
+        let newLoc = destination.val();
+        if (mDestMarker != null) {
+           //test if location changed, in case update was from marker itself
+           let oldLoc = mDestMarker.getPosition();
+           if (newLoc.lat != oldLoc.lat() || newLoc.lng != oldLoc.lng()) {
+              setDestMarker(newLoc);
+           }
+        } else {
+           //creates a new marker
+           setDestMarker(newLoc);
+        }
+        LOC_DEST_BUTTON.classList.remove("show");
+        CLEAR_DEST_BTN.classList.add("show");
+        geoCodeCoordinates(newLoc, 'destination');
+
+     } else {
+        if (mDestMarker != null) {
+           mDestMarker.setMap(null);
+           mDestMarker = null;
+        }
+        LOC_DEST_BUTTON.classList.add("show");
+        CLEAR_DEST_BTN.classList.remove("show");
+     }
+     routeFare();
+  });
+
+}
+
+function addLocListener() {
+
+   let locRef = firebase.database().ref("/riders")
+                     .child(mUser.uid).child("last_loc");
+
+   locRef.on('value', (location) => {
+      if (location.exists()) {
          // console.log(snapshot.val());
-         let newAddress = snapshot.val();
-         PICKUP_ADDRESS_FIELD.value = newAddress;
-         LOCATION_BUTTON.classList.remove("show");
-         CLEAR_BUTTON.classList.add("show");
-
-      } else {
-         PICKUP_ADDRESS_FIELD.value = null;
-         LOCATION_BUTTON.classList.add("show");
-         CLEAR_BUTTON.classList.remove("show");
-
+         let loc = location.val();
+         if (mMap != null) {
+            mMap.setCenter(loc);
+            mMap.setZoom(9);
+         }
       }
    });
+}
 
-   let destAddressRecord = firebase.database().ref("/riders")
-                      .child(mUser.uid).child("dest_address");
+function addAddressListiner() {
+   let addressRef = firebase.database().ref("/riders")
+                .child(mUser.uid).child("formatted_address");
 
-   destAddressRecord.on('value', (snapshot) => {
-      if (snapshot.exists()) {
-         // console.log(snapshot.val());
-         let newAddress = snapshot.val();
-         DEST_ADDRESS_FIELD.value = newAddress;
-         LOC_DEST_BUTTON.classList.remove("show");
-         CLEAR_DEST_BTN.classList.add("show");
+   addressRef.on('value', (address) => {
+     if (address.exists()) {
+        // console.log(snapshot.val());
+        let newAddress = address.val();
+        PICKUP_ADDRESS_FIELD.value = newAddress;
+        // LOCATION_BUTTON.classList.remove("show");
+        // CLEAR_BUTTON.classList.add("show");
+
+     } else {
+        PICKUP_ADDRESS_FIELD.value = null;
+        // LOCATION_BUTTON.classList.add("show");
+        // CLEAR_BUTTON.classList.remove("show");
+
+     }
+  });
+
+}
+
+function addDestAddrListener() {
+   let destAddressRef = firebase.database().ref("/riders")
+                     .child(mUser.uid).child("dest_address");
+
+  destAddressRef.on('value', (address) => {
+     if (address.exists()) {
+        // console.log(snapshot.val());
+        let newAddress = address.val();
+        DEST_ADDRESS_FIELD.value = newAddress;
+        // LOC_DEST_BUTTON.classList.remove("show");
+        // CLEAR_DEST_BTN.classList.add("show");
+     } else {
+        DEST_ADDRESS_FIELD.value = null;
+        // LOC_DEST_BUTTON.classList.add("show");
+        // CLEAR_DEST_BTN.classList.remove("show");
+     }
+  });
+
+}
+
+
+function getUserStateRecord() {
+
+   let controlRef = firebase.database().ref("/control-data");
+
+   controlRef.get().then((controlRec) => {
+      if (controlRec.exists()) {
+          mRates = controlRec.val();
+          console.log("Control Data: " + mRates);
       } else {
-         DEST_ADDRESS_FIELD.value = null;
-         LOC_DEST_BUTTON.classList.add("show");
-         CLEAR_DEST_BTN.classList.remove("show");
+          mRates = null;
       }
+
+      if (mRequestInProgress == false) {
+         computeFare();
+      }
+
+   }).then(() => {
+      console.log("Got it!");
+   }).catch((error) => {
+      userMessage(error);
    });
+
+
+
+
+
+
+
 
    // let dateTimeRecord = firebase.database().ref("/riders")
    //                    .child(mUser.uid).child("date_time");
@@ -738,31 +814,7 @@ function getUserStateRecord() {
    // });
 
 
-   let destinationRecord = firebase.database().ref("/riders")
-                      .child(mUser.uid).child("destination");
 
-   destinationRecord.on('value', (snapshot) => {
-      if (snapshot.exists()) {
-         // console.log(snapshot.val());
-         let newLoc = snapshot.val();
-         if (mDestMarker != null) {
-            //test if location changed, in case update was from marker itself
-            let oldLoc = mDestMarker.getPosition();
-            if (newLoc.lat != oldLoc.lat() || newLoc.lng != oldLoc.lng()) {
-               setDestMarker(newLoc);
-            }
-         } else {
-            //creates a new marker
-            setDestMarker(newLoc);
-         }
-      } else {
-         if (mDestMarker != null) {
-            mDestMarker.setMap(null);
-            mDestMarker = null;
-         }
-      }
-      routeFare();
-   });
 
    let lengthRecord = firebase.database().ref("/riders")
                       .child(mUser.uid).child("fare_length");
@@ -937,7 +989,7 @@ function getDrivers() {
          });
 
          DRIVERS.set(key, mDriverMarker);
-         routePickup();
+         // routePickup();
       }
    });
 
@@ -951,7 +1003,7 @@ function getDrivers() {
 
          let marker = DRIVERS.get(key);
          marker.setPosition(driverLoc);
-         routePickup();
+         // routePickup();
 
 
       }
@@ -969,53 +1021,17 @@ function getDrivers() {
 
          marker.setMap(null);
          DRIVERS.delete(key);
-         routePickup();
+         // routePickup();
 
       }
    });
 
 }
 
-function requestLocation(type) {
-   if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-         let riderRef = firebase.database()
-            .ref("/riders").child(firebase.auth().currentUser.uid);
-         const updates = {};
-         let lat = position.coords.latitude;
-         let lng = position.coords.longitude;
-
-         if (type == 'pickup' || type == null) {
-            mUserLat = lat;
-            mUserLng = lng;
-            //console.log(mUserLat);
-            //console.log(mUserLng);
-            updates['/last_loc' ] = {lat: mUserLat, lng: mUserLng };
-            // updates['/status' ] = ready;
-            geoCodeCoordinates({lat: mUserLat, lng: mUserLng}, 'pickup');
-
-         } else if (type == 'destination') {
-            updates['/destination' ] = {lat: lat, lng: lng };
-            geoCodeCoordinates({lat: lat, lng: lng}, 'destination');
-
-         }
-
-         updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
-         riderRef.update(updates);
-
-      }, (error) => {
-         userMessage("Failed to get geolocation from browser");
-         console.log(error.message);
-      });
-   } else {
-      userMessage("Failed to get geolocation from browser");
-   }
-}
-
 function setDestMarker(atLatLng) {
 
    mMap.setCenter(atLatLng);
-   mMap.setZoom(13);
+   mMap.setZoom(9);
 
    let animate = google.maps.Animation.DROP;
    let drag = true;
@@ -1048,7 +1064,7 @@ function setDestMarker(atLatLng) {
          updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
 
          riderRef.update(updates);
-         geoCodeCoordinates(destination, 'destination');
+         // geoCodeCoordinates(destination, 'destination');
 
       });
 
@@ -1062,7 +1078,7 @@ function setDestMarker(atLatLng) {
 function setPickupMarker(atLatLng) {
 
    mMap.setCenter(atLatLng);
-   mMap.setZoom(13);
+   mMap.setZoom(9);
 
    let drag = true;
    let animate = google.maps.Animation.DROP;
@@ -1106,13 +1122,13 @@ function setPickupMarker(atLatLng) {
          // riderRef.set(rider);
 
          const updates = {};
-         updates['/last_loc' ] = {lat: mUserLat, lng: mUserLng };
+         updates['/pickup' ] = {lat: mUserLat, lng: mUserLng };
          // updates['/status' ] = ready;
          updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
 
          riderRef.update(updates);
 
-         geoCodeCoordinates({lat: mUserLat, lng: mUserLng}, 'pickup');
+         // geoCodeCoordinates({lat: mUserLat, lng: mUserLng}, 'pickup');
       });
 
    } else {
