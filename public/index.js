@@ -880,6 +880,10 @@ function addFareListener() {
                shouldFocus: false,
             });
 
+      } else {
+         if (mDestInfoWindow != null) {
+            mDestInfoWindow.close();
+         }
       }
 
    });
