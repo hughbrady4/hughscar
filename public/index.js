@@ -354,8 +354,12 @@ function initApp() {
       fields: ["formatted_address", "geometry", "icon", "name"],
       strictBounds: false,
       types: ["establishment"],
+
+
    };
 
+
+   let geoCoder = new google.maps.Geocoder();
    const AUTOCOMPLETE = new google.maps.places.Autocomplete(PICKUP_ADDRESS_FIELD, options);
    const DESTCOMPLETE = new google.maps.places.Autocomplete(DEST_ADDRESS_FIELD, options);
 
@@ -378,9 +382,30 @@ function initApp() {
 
       } else {
 
+         geoCoder.geocode({ address: place.name }, (results, status) => {
+            if (status === "OK" && results[0]) {
+              // console.log(results[0].geometry.location);
+               let loc = results[0].geometry.location;
+               let riderRef = firebase.database()
+                 .ref("/riders").child(firebase.auth().currentUser.uid);
+
+               const updates = {};
+               updates['/pickup' ] = loc.toJSON();
+               updates['/formatted_address'] = results[0].formatted_address;
+               updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+               return riderRef.update(updates).then(() => {
+                  userMessage("Pickup address updated");
+               });
+
+            } else {
+               userMessage(status);
+            }
+         }).catch((error) => {
+
+            userMessage(error.code);
+
+         });
       }
-
-
    });
 
    DESTCOMPLETE.addListener('place_changed', () => {
@@ -402,6 +427,27 @@ function initApp() {
 
       } else {
 
+         geoCoder.geocode({ address: place.name }, (results, status) => {
+            if (status === "OK" && results[0]) {
+               // console.log(results[0].geometry.location);
+               let loc = results[0].geometry.location;
+               let riderRef = firebase.database()
+                  .ref("/riders").child(firebase.auth().currentUser.uid);
+
+               const updates = {};
+               updates['/destination' ] = loc.toJSON();
+               updates['/dest_address'] = results[0].formatted_address;
+               updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+               return riderRef.update(updates).then(() => {
+                  userMessage("Pickup address updated");
+               });
+
+            } else {
+               userMessage(status);
+            }
+         }).catch((error) => {
+            userMessage(error.code);
+         });
       }
    });
 
