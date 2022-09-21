@@ -35,7 +35,7 @@ const INFO_WINDOWS = new Map();
 
 const USER_MESSAGE_HEADING = document.getElementById("h5-main-text");
 const PICKUP_ADDRESS_FIELD = document.getElementById("pickup");
-const DEST_ADDRESS_FIELD = document.getElementById("destination");
+
 //const DATE_TIME_FIELD = document.getElementById("datetime");
 const LOCATION_BUTTON = document.getElementById("btn-group-location");
 const LOC_DEST_BUTTON = document.getElementById("btn-group-loc-dest");
@@ -45,6 +45,9 @@ const SPINNER = document.getElementById("loader");
 const PROGRESS = document.getElementById("requestProgress");
 const PROGRESS_BAR = document.getElementById("requestBar");
 const AUTH_CONTAINER = document.getElementById('firebaseui-auth-container');
+
+
+const DEST_ADDRESS_FIELD = document.getElementById("destination");
 
 const BTN_PICKUP_LOC = document.getElementById("btn-location");
 BTN_PICKUP_LOC.onclick = function() {
@@ -79,9 +82,6 @@ BTN_DEST_LOC.onclick = function() {
    });
 
 }
-
-
-
 
 const BTN_LOC = document.createElement("button");
 BTN_LOC.classList.add("btn");
@@ -204,6 +204,11 @@ function authenticate() {
 
 }
 
+function calcDistance() {
+
+
+}
+
 function callDriver() {
 
    window.open('tel:2144333268');
@@ -264,12 +269,7 @@ function computeFare() {
    }
 
    let minutes = mDuration.value / 60;
-
-   console.log(minutes);
-
    let miles = mDistance.value * 0.000621371;
-
-   console.log(miles);
 
    let baseFare = mRates.base_rate;
    let cancelFare = mRates.cancelation_rate;
@@ -279,7 +279,7 @@ function computeFare() {
    let totalFare = baseFare + mileageFare + timeFare;
 
    mFare = { base_amount: baseFare,  cancel_amount: cancelFare,
-             mileage_amount: mileageFare,
+             mileage_amount: mileageFare, currency: mRates.currency,
              time_amount: timeFare, fare_amount: totalFare };
 
    let riderRef = firebase.database()
@@ -289,53 +289,12 @@ function computeFare() {
    updates['/fare' ] = mFare;
    updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
 
-   riderRef.update(updates);
-
-
-   // Create our number formatter.
-   let formatter = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: mRates.currency,
-
-      // These options are needed to round to whole numbers if that's what you want.
-      //minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
-      //maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
+   riderRef.update(updates).then(() => {
+      userMessage("Fare info updated");
    });
 
-   // formatter.format(2500);
-
-   let fareStr = formatter.format(totalFare);
-   // console.log(formatter.format(totalFare));
-
-   const contentString =
-      '<div id="content">' +
-      '<div id="siteNotice">' +
-      "</div>" +
-      '<h5 id="firstHeading" class="firstHeading">' + fareStr + '</h5>' +
-
-      '<div id="bodyContent">' +
-      '<button id="btn-request-ride" class="btn btn-primary" onclick="requestRide()">Request</button>' +
-      "<p>Your destination is <b>" + mDistance.text + "</b> away. The trip " +
-      "duration is <b>" + mDuration.text + "</b>.</p>" +
-      "</div>" +
-      "</div>";
-
-   if (mDestInfoWindow != null) {
-      mDestInfoWindow.close();
-   }
-   mDestInfoWindow = new google.maps.InfoWindow();
-
-   mDestInfoWindow.setContent(contentString);
-
-   console.log(mDestMarker);
-   console.log(mMap);
 
 
-   mDestInfoWindow.open({
-      anchor: mDestMarker,
-      map: mMap,
-      shouldFocus: false,
-   });
 
 }
 
@@ -376,6 +335,74 @@ function initApp() {
       markerOptions: markerOptions,
       draggable: false,
       map: mMap,
+   });
+
+
+   const center = { lat: 50.064192, lng: -130.605469 };
+   // Create a bounding box with sides ~10km away from the center point
+
+   const defaultBounds = {
+      north: center.lat + 0.1,
+      south: center.lat - 0.1,
+      east: center.lng + 0.1,
+      west: center.lng - 0.1,
+   };
+
+   const options = {
+      // bounds: defaultBounds,
+      componentRestrictions: { country: "us" },
+      fields: ["formatted_address", "geometry", "icon", "name"],
+      strictBounds: false,
+      types: ["establishment"],
+   };
+
+   const AUTOCOMPLETE = new google.maps.places.Autocomplete(PICKUP_ADDRESS_FIELD, options);
+   const DESTCOMPLETE = new google.maps.places.Autocomplete(DEST_ADDRESS_FIELD, options);
+
+   AUTOCOMPLETE.addListener('place_changed', () => {
+      let place = AUTOCOMPLETE.getPlace();
+      console.log(place.formatted_address);
+
+      if (place.geometry) {
+        let loc = place.geometry.location;
+        let riderRef = firebase.database()
+           .ref("/riders").child(firebase.auth().currentUser.uid);
+
+        const updates = {};
+        updates['/pickup' ] = loc.toJSON();
+        updates['/formatted_address'] = place.formatted_address;
+        updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+        riderRef.update(updates).then(() => {
+           userMessage("Pickup address updated");
+        });
+
+      } else {
+
+      }
+
+
+   });
+
+   DESTCOMPLETE.addListener('place_changed', () => {
+      let place = DESTCOMPLETE.getPlace();
+      console.log(place.formatted_address);
+
+      if (place.geometry) {
+        let loc = place.geometry.location;
+        let riderRef = firebase.database()
+           .ref("/riders").child(firebase.auth().currentUser.uid);
+
+        const updates = {};
+        updates['/destination' ] = loc.toJSON();
+        updates['/dest_address'] = place.formatted_address;
+        updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+        riderRef.update(updates).then(() => {
+           userMessage("Pickup address updated");
+        });
+
+      } else {
+
+      }
    });
 
    firebase.auth().onAuthStateChanged((user) => {
@@ -430,6 +457,7 @@ function initApp() {
          addLocListener();
          addAddressListiner();
          addDestAddrListener();
+         addFareListener();
          getDriverRecord();
          getDrivers();
       });
@@ -453,7 +481,43 @@ function showProgressBar() {
    }, 3000);
 }
 
+
+function setAddress2() {
+   let place = AUTOCOMPLETE.getPlace();
+   console.log(place);
+}
+
+
 function setAddress(address) {
+
+   let request = {
+      query: address,
+      fields: ['name', 'geometry'],
+   };
+
+   let service = new google.maps.places.PlacesService(mMap);
+
+   service.findPlaceFromQuery(request, function(results, status) {
+      if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
+
+        let loc = results[0].geometry.location;
+        let riderRef = firebase.database()
+           .ref("/riders").child(firebase.auth().currentUser.uid);
+
+        const updates = {};
+        updates['/pickup' ] = loc.toJSON();
+        //updates['/formatted_address'] = results[0].formatted_address;
+        updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+        riderRef.update(updates).then(() => {
+           userMessage("Pickup address updated");
+        });
+
+      } else {
+         userMessage(status);
+      }
+   });
+
+   return;
    let geoCoder = new google.maps.Geocoder();
    //let address = PICKUP_ADDRESS_FIELD.value;
 
@@ -762,6 +826,65 @@ function addDestAddrListener() {
 
 }
 
+function addFareListener() {
+
+   let fareRef = firebase.database()
+      .ref("/riders").child(mUser.uid).child("fare");
+
+   fareRef.on('value', (fare) => {
+
+      if (fare.exists()) {
+
+
+         let fareVal = fare.val();
+
+         console.log("Fare: " + fareVal);
+         console.log(mDestMarker);
+
+         let formatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: fareVal.currency,
+
+            // These options are needed to round to whole numbers if that's what you want.
+            //minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
+            //maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
+         });
+
+
+         let fareStr = formatter.format(fareVal.fare_amount);
+
+         const contentString =
+            '<div id="content">' +
+            '<div id="siteNotice">' +
+            "</div>" +
+            '<h5 id="firstHeading" class="firstHeading">' + fareStr + '</h5>' +
+
+            '<div id="bodyContent">' +
+            // '<button id="btn-request-ride" class="btn btn-primary" onclick="requestRide()">Request</button>' +
+            "<p>Your destination is <b>" + mDistance.text + "</b> away. The trip " +
+            "duration is <b>" + mDuration.text + "</b>.</p>" +
+            "</div>" +
+            "</div>";
+
+            if (mDestInfoWindow != null) {
+               mDestInfoWindow.close();
+            }
+
+            mDestInfoWindow = new google.maps.InfoWindow();
+            mDestInfoWindow.setContent(contentString);
+
+
+            mDestInfoWindow.open({
+               anchor: mDestMarker,
+               map: mMap,
+               shouldFocus: false,
+            });
+
+      }
+
+   });
+
+}
 
 function getUserStateRecord() {
 
@@ -834,16 +957,6 @@ function getUserStateRecord() {
       }
    });
 
-   let fareRecord = firebase.database().ref("/riders")
-                      .child(mUser.uid).child("fare");
-
-   fareRecord.on('value', (snapshot) => {
-      if (snapshot.exists()) {
-         mFare = snapshot.val();
-      } else {
-         mFare = null;
-      }
-   });
 
    let requestKeyRecord = firebase.database().ref("/riders")
                       .child(mUser.uid).child("request_key");
@@ -973,14 +1086,14 @@ function getDrivers() {
    //console.log(mUser.uid);
    //console.log(driversRecord);
 
-   driversRecord.on('child_added', (snapshot) => {
-      if (snapshot.exists()) {
+   driversRecord.on('child_added', (driver) => {
+      if (driver.exists()) {
 
-         console.log(snapshot.key);
-         console.log(snapshot.val().last_loc);
+         console.log(driver.key);
+         console.log(driver.val().last_loc);
 
-         let key = snapshot.key;
-         let driver_loc = snapshot.val().last_loc;
+         let key = driver.key;
+         let driver_loc = driver.val().last_loc;
 
          mDriverMarker = new google.maps.Marker({
             position: driver_loc,
@@ -993,13 +1106,13 @@ function getDrivers() {
       }
    });
 
-   driversRecord.on('child_changed', (snapshot) => {
-      if (snapshot.exists()) {
-         console.log(snapshot.key);
-         console.log(snapshot.val().last_loc);
+   driversRecord.on('child_changed', (driver) => {
+      if (driver.exists()) {
+         console.log(driver.key);
+         console.log(driver.val().last_loc);
 
-         let key = snapshot.key;
-         let driverLoc = snapshot.val().last_loc;
+         let key = driver.key;
+         let driverLoc = driver.val().last_loc;
 
          let marker = DRIVERS.get(key);
          marker.setPosition(driverLoc);
@@ -1009,13 +1122,13 @@ function getDrivers() {
       }
    });
 
-   driversRecord.on('child_removed', (snapshot) => {
-      if (snapshot.exists()) {
-         console.log(snapshot.key);
-         console.log(snapshot.val().last_loc);
+   driversRecord.on('child_removed', (driver) => {
+      if (driver.exists()) {
+         console.log(driver.key);
+         console.log(driver.val().last_loc);
 
-         let key = snapshot.key;
-         let driverLoc = snapshot.val().last_loc;
+         let key = driver.key;
+         let driverLoc = driver.val().last_loc;
 
          let marker = DRIVERS.get(key);
 
@@ -1026,6 +1139,96 @@ function getDrivers() {
       }
    });
 
+}
+
+function getDrivers2() {
+
+   let driversRecord = firebase.database().ref("/drivers")
+      .orderByChild("status").equalTo("online");
+   //console.log(mUser.uid);
+   //console.log(driversRecord);
+
+   driversRecord.on('value', (drivers) => {
+
+      let origins = [];
+
+
+      drivers.forEach((driver) => {
+         let driverUid = driver.key;
+         let driverData = driver.val();
+
+         let key = driver.key;
+         let driver_loc = driverData.last_loc;
+         origins.push(driver_loc);
+         DRIVERS.set(driverUid, driverData);
+      });
+
+      let destinations = [mPickupMarker.getPosition()];
+
+      // for (let i = 0; i < userMarkers.length; i++) {
+      //    origins.push(userMarkers[i].getPosition());
+      //    destinations.push(userMarkers[i].getPosition());
+      // }
+
+
+      let distanceRequest = {
+         origins: origins,
+         destinations: destinations,
+         travelMode: 'DRIVING',
+         avoidHighways: false,
+         avoidTolls: false,
+      }
+
+      distanceService.getDistanceMatrix(distanceRequest,  (response, status) => {
+         if (status == 'OK') {
+
+            for (let k = 0; k < INFO_WINDOWS.length; k++) {
+               INFO_WINDOWS[k].close();
+            }
+            infoWindows.length = 0;
+
+            let origins = response.originAddresses;
+            let destinations = response.destinationAddresses;
+
+            for (let i = 0; i < origins.length; i++) {
+               let results = response.rows[i].elements;
+               let infoString = "";
+
+               for (var j = 0; j < results.length; j++) {
+
+                  if (i != j) {
+
+                     let element = results[j];
+                     if (element.status == "OK") {
+                       let distance = element.distance.text;
+                       let distanceValue = element.distance.value;
+                       let duration = element.duration.text;
+                       let value = element.duration.value;
+
+                       let from = origins[i];
+                       let to = destinations[j];
+
+                       //let strDistance0 = "From: " + origins[i];
+                       let strDistance1 = "<p>To: " + destinations[j] +
+                                         ", " + distance + ", " + duration + "</p>";
+
+                       infoString += strDistance1;
+                     } else infoString += "<p>" + element.status + "</p>";
+                  }
+               }
+
+               const infoWindow = new google.maps.InfoWindow({
+                  content: infoString,
+               });
+
+               //infoWindow.open(map, userMarkers[i]);
+               INFO_WINDOWS.push(infoWindow);
+            }
+         } else {
+            errorMessage(status);
+         }
+      });
+   });
 }
 
 function setDestMarker(atLatLng) {
