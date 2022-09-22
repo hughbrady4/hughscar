@@ -114,6 +114,71 @@ BTN_LOC.onclick = function() {
 }
 
 
+
+const BTN_REQUEST = document.createElement("button");
+BTN_REQUEST.classList.add("btn");
+BTN_REQUEST.classList.add("btn-primary");
+BTN_REQUEST.classList.add("custom-map-control-button");
+BTN_REQUEST.innerHTML = "Request";
+BTN_REQUEST.onclick = function() {
+
+     if (mRequestInProgress == true) {
+       userMessage("Request in Progress.");
+       return;
+     }
+
+     if (mUser.isAnonymous == true) {
+       userMessage("Please log in to request a ride.");
+       authenticate();
+       return;
+     }
+
+     let requestRef = firebase.database()
+        .ref("/requests").push();
+
+     const updates = {};
+     updates['/fare' ] = mFare;
+     updates['/name' ] = mUser.displayName;
+     updates['/phone'] = mUser.phoneNumber;
+     updates['/pickup_loc'] = mPickupMarker.getPosition().toJSON();
+     updates['/pickup_lat'] = mPickupMarker.getPosition().lat();
+     updates['/pickup_lng'] = mPickupMarker.getPosition().lng();
+     updates['/pickup_address'] = PICKUP_ADDRESS_FIELD.value;
+     //updates['/pickup_time'] = DATE_TIME_FIELD.value;
+     updates['/rider_uid'] = mUser.uid;
+     updates['/dest_loc'] = mDestMarker.getPosition().toJSON();
+     updates['/dest_lat'] = mDestMarker.getPosition().lat();
+     updates['/dest_lng'] = mDestMarker.getPosition().lng();
+     updates['/dest_address'] = DEST_ADDRESS_FIELD.value;
+
+     updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+     updates['/status'] = "pending";
+
+     requestRef.update(updates).then(() => {
+
+       const updates2 = {};
+       updates2['/status'] = "pending";
+       updates2['/request_key'] = requestRef.key;
+       updates2['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+
+
+       let riderRef = firebase.database()
+          .ref("/riders").child(firebase.auth().currentUser.uid);
+       return riderRef.update(updates2);
+
+     }).then(() => {
+
+
+        callDriver();
+        
+     });
+
+
+}
+
+
+
+
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();
@@ -644,51 +709,6 @@ function setDestinationAddress(address) {
 
 function requestRide() {
 
-   if (mRequestInProgress == true) {
-     userMessage("Request in Progress.");
-     return;
-   }
-
-   if (mUser.isAnonymous == true) {
-     userMessage("Please log in to request a ride.");
-     authenticate();
-     return;
-   }
-
-   let requestRef = firebase.database()
-      .ref("/requests").push();
-
-   const updates = {};
-   updates['/fare' ] = mFare;
-   updates['/name' ] = mUser.displayName;
-   updates['/phone'] = mUser.phoneNumber;
-   updates['/pickup_loc'] = mPickupMarker.getPosition().toJSON();
-   updates['/pickup_lat'] = mPickupMarker.getPosition().lat();
-   updates['/pickup_lng'] = mPickupMarker.getPosition().lng();
-   updates['/pickup_address'] = PICKUP_ADDRESS_FIELD.value;
-   //updates['/pickup_time'] = DATE_TIME_FIELD.value;
-   updates['/rider_uid'] = mUser.uid;
-   updates['/dest_loc'] = mDestMarker.getPosition().toJSON();
-   updates['/dest_lat'] = mDestMarker.getPosition().lat();
-   updates['/dest_lng'] = mDestMarker.getPosition().lng();
-   updates['/dest_address'] = DEST_ADDRESS_FIELD.value;
-
-   updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
-   updates['/status'] = "pending";
-
-   requestRef.update(updates).then(() => {
-
-     const updates2 = {};
-     updates2['/status'] = "pending";
-     updates2['/request_key'] = requestRef.key;
-     updates2['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
-
-
-     let riderRef = firebase.database()
-        .ref("/riders").child(firebase.auth().currentUser.uid);
-     riderRef.update(updates2);
-
-   });
 
 
 
@@ -989,23 +1009,7 @@ function getUserStateRecord() {
 
 
 
-   let lengthRecord = firebase.database().ref("/riders")
-                      .child(mUser.uid).child("fare_length");
 
-   lengthRecord.on('value', (snapshot) => {
-      if (snapshot.exists()) {
-          let fareLength = snapshot.val();
-          mDistance = fareLength.distance;
-          mDuration = fareLength.duration;
-          console.log(fareLength);
-      } else {
-         mDistance = null;
-         mDuration = null;
-      }
-      if (mRequestInProgress == false) {
-         computeFare();
-      }
-   });
 
 
    let requestKeyRecord = firebase.database().ref("/riders")
