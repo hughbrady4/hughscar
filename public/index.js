@@ -562,19 +562,46 @@ function initApp() {
       updates['/anonymous' ] = user.isAnonymous;
       updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
       riderRef.update(updates).then(() => {
-         getUserStateRecord();
+         let adminRef = firebase.database().ref("/admin/")
+                           .child(mUser.uid);
+         return adminRef.get();
+       }).then((admin) => {
+         if (admin.exists()) {
+            $("#link-queue").show();
+            //$("#col-drive").css("display", "inline");
+         } else {
+            $("#link-queue").hide();
+            //$("#col-drive").css("display", "none");
+         }
+      }).then(() => {
+         let ratesRef = firebase.database().ref("/control-data");
+         return ratesRef.get();
+      }).then((rates) => {
+          if (rates.exists()) {
+             mRates = rates.val();
+             // console.log("Rates" + mRates);
+             //return Promise.resolve();
+          } else {
+             mRates = null;
+             // return Promise.reject();
+          }
+          return Promise.resolve();
+      }).then(() => {
+         // getUserStateRecord();
          addPickupListener();
          addDestListener();
          addLocListener();
          addAddressListiner();
          addDestAddrListener();
+         addFareLenListener();
          addFareListener();
          getDriverRecord();
          getDrivers();
-      });
-
+         return Promise.resolve();
+      }).catch((error) => {
+         userMessage(error.message);
+      });;
    });
-
 }
 
 function showProgressBar() {
@@ -591,13 +618,6 @@ function showProgressBar() {
        }
    }, 3000);
 }
-
-
-function setAddress2() {
-   let place = AUTOCOMPLETE.getPlace();
-   console.log(place);
-}
-
 
 function setAddress(address) {
 
@@ -740,22 +760,7 @@ function getDriverRecord() {
       }
    });
 
-   let adminRecord = firebase.database().ref("/admin/")
-                      .child(mUser.uid);
 
-   adminRecord.get().then((snapshot) => {
-      console.log(snapshot.val());
-      if (snapshot.exists()) {
-         $("#link-queue").show();
-         //$("#col-drive").css("display", "inline");
-      } else {
-         $("#link-queue").hide();
-         //$("#col-drive").css("display", "none");
-
-      }
-   }).catch((error) => {
-      userMessage(error.message);
-   });
 
  }
 
@@ -892,6 +897,28 @@ function addDestAddrListener() {
 
 }
 
+function addFareLenListener() {
+
+   let lengthRef = firebase.database().ref("/riders")
+                     .child(mUser.uid).child("fare_length");
+
+  lengthRef.on('value', (fareLen) => {
+     if (fareLen.exists()) {
+         let length = fareLen.val();
+         mDistance = length.distance;
+         mDuration = length.duration;
+         // console.log(length);
+     } else {
+        mDistance = null;
+        mDuration = null;
+     }
+     if (mRequestInProgress == false) {
+        computeFare();
+     }
+  });
+
+}
+
 function addFareListener() {
 
    let fareRef = firebase.database()
@@ -946,10 +973,16 @@ function addFareListener() {
                shouldFocus: false,
             });
 
+            mMap.controls[google.maps.ControlPosition.TOP_CENTER].push(BTN_REQUEST);
+
+
+
       } else {
          if (mDestInfoWindow != null) {
             mDestInfoWindow.close();
          }
+
+         mMap.controls[google.maps.ControlPosition.TOP_CENTER].pop();
       }
 
    });
@@ -958,25 +991,7 @@ function addFareListener() {
 
 function getUserStateRecord() {
 
-   let controlRef = firebase.database().ref("/control-data");
 
-   controlRef.get().then((controlRec) => {
-      if (controlRec.exists()) {
-          mRates = controlRec.val();
-          console.log("Control Data: " + mRates);
-      } else {
-          mRates = null;
-      }
-
-      if (mRequestInProgress == false) {
-         computeFare();
-      }
-
-   }).then(() => {
-      console.log("Got it!");
-   }).catch((error) => {
-      userMessage(error);
-   });
 
 
 
