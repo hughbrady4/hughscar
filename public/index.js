@@ -170,7 +170,7 @@ BTN_REQUEST.onclick = function() {
 
 
         callDriver();
-        
+
      });
 
 
@@ -727,14 +727,6 @@ function setDestinationAddress(address) {
    });
 }
 
-function requestRide() {
-
-
-
-
-
-}
-
 function getDriverRecord() {
 
    let driverRecord = firebase.database().ref("/drivers/")
@@ -953,7 +945,6 @@ function addFareListener() {
             '<h5 id="firstHeading" class="firstHeading">' + fareStr + '</h5>' +
 
             '<div id="bodyContent">' +
-            // '<button id="btn-request-ride" class="btn btn-primary" onclick="requestRide()">Request</button>' +
             "<p>Your destination is <b>" + mDistance.text + "</b> away. The trip " +
             "duration is <b>" + mDuration.text + "</b>.</p>" +
             "</div>" +
