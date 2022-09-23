@@ -167,7 +167,7 @@ BTN_REQUEST.onclick = function() {
        return riderRef.update(updates2);
 
      }).then(() => {
-
+        firebase.analytics().logEvent('request_made');
 
         callDriver();
 
@@ -587,7 +587,7 @@ function initApp() {
           }
           return Promise.resolve();
       }).then(() => {
-         // getUserStateRecord();
+         addRequestListener();
          addPickupListener();
          addDestListener();
          addLocListener();
@@ -972,168 +972,26 @@ function addFareListener() {
          if (mDestInfoWindow != null) {
             mDestInfoWindow.close();
          }
-
-         mMap.controls[google.maps.ControlPosition.TOP_CENTER].pop();
+         while (mMap.controls[google.maps.ControlPosition.TOP_CENTER].length > 0) {
+            mMap.controls[google.maps.ControlPosition.TOP_CENTER].pop();
+         }
       }
 
    });
 
 }
 
-function getUserStateRecord() {
+function addRequestListener() {
 
-
-
-
-
-
-
-
-
-
-   // let dateTimeRecord = firebase.database().ref("/riders")
-   //                    .child(mUser.uid).child("date_time");
-   //
-   // dateTimeRecord.on('value', (snapshot) => {
-   //    if (snapshot.exists()) {
-   //      DATE_TIME_FIELD.value = snapshot.val();
-   //    } else {
-   //      let defaultTime = new Date(Date.now() + 1000*60*10);
-   //      let offset = defaultTime.getTimezoneOffset();
-   //      defaultTime.setTime(defaultTime.getTime() - 1000*60*offset);
-   //      console.log("Timezone offset: " + offset);
-   //      console.log("Default pickup: " + defaultTime.toISOString().substring(0, 16));
-   //      DATE_TIME_FIELD.value = defaultTime.toISOString().substring(0, 16);
-   //      DATE_TIME_FIELD.min = defaultTime.toISOString().substring(0, 16);
-   //      DATE_TIME_FIELD.step = 60*15;
-   //
-   //
-   //    }
-   //
-   // });
-
-
-
-
-
-
-
-   let requestKeyRecord = firebase.database().ref("/riders")
+   let requestKeyRef = firebase.database().ref("/riders")
                       .child(mUser.uid).child("request_key");
 
-   requestKeyRecord.on('value', (snapshot) => {
-      if (snapshot.exists()) {
-         if (mDestInfoWindow != null) {
-            mDestInfoWindow.close();
-         }
-         mRequestInProgress = true;
-         mRideRequestRef = snapshot.val();
-         LOCATION_BUTTON.classList.remove("show");
-         CLEAR_BUTTON.classList.remove("show");
-         LOC_DEST_BUTTON.classList.remove("show");
-         CLEAR_DEST_BTN.classList.remove("show");
-
-
-         const cancelButton = document.createElement("button");
-         cancelButton.textContent = "Cancel";
-         cancelButton.classList.add("btn");
-         cancelButton.classList.add("btn-primary");
-         mMap.controls[google.maps.ControlPosition.TOP_CENTER].push(cancelButton);
-         cancelButton.addEventListener("click", () => {
-            cancelRequest(mRideRequestRef);
-         });
-
-
-
-
-         let requestRecordStatus = firebase.database().ref("/requests")
-                            .child(mRideRequestRef).child("status");
-
-         requestRecordStatus.on('value', (snapshot) => {
-            if (snapshot.exists()) {
-               let requestStatus = snapshot.val();
-               console.log("Request status: " + requestStatus);
-               if (requestStatus == "accepted") {
-                 PROGRESS.classList.remove("show");
-                 SPINNER.classList.remove("show");
-                 PICKUP_ADDRESS_FIELD.readOnly = true;
-                 DEST_ADDRESS_FIELD.readOnly = true;
-                 //DATE_TIME_FIELD.readOnly = true;
-
-                 if (mPickupMarker != null) {
-                    mPickupMarker.setDraggable(false);
-                 }
-                 if (mDestMarker != null) {
-                    mDestMarker.setDraggable(false);
-                 }
-
-
-
-                 USER_MESSAGE_HEADING.innerHTML = "You're pickup request is accepted.";
-
-               } else if (requestStatus == "pending") {
-
-                  if (mPickupMarker != null) {
-                     mPickupMarker.setDraggable(false);
-                  }
-                  if (mDestMarker != null) {
-                     mDestMarker.setDraggable(false);
-                  }
-
-                  SPINNER.classList.remove("show");
-                  PROGRESS.classList.add("show");
-
-                  showProgressBar();
-                  PICKUP_ADDRESS_FIELD.readOnly = true;
-                  DEST_ADDRESS_FIELD.readOnly = true;
-                  //DATE_TIME_FIELD.readOnly = true;
-                  USER_MESSAGE_HEADING.innerHTML = "You're pickup request is pending.";
-
-               }
-               //routePickup();
-            }
-         });
-
-
-
-
-
-
+   requestKeyRef.on('value', (request) => {
+      if (request.exists()) {
+         let page = "https://www.hughscar.com/request_detail.html?request=" + request.val();
+         location.replace(page);
       } else {
-         if (mRideRequestRef != null) {
-            let requestRecord = firebase.database().ref("/requests")
-                              .child(mRideRequestRef);
-            requestRecord.off();
-            mRideRequestRef = null;
-         }
-         if (mRequestInProgress == true) {
-            mMap.controls[google.maps.ControlPosition.TOP_CENTER].pop();
-            mRequestInProgress = false;
-         }
 
-         if (mPickupMarker != null) {
-            mPickupMarker.setDraggable(true);
-         }
-
-         if (mDestMarker != null) {
-            mDestMarker.setDraggable(true);
-         }
-
-         SPINNER.classList.remove("show");
-         PROGRESS.classList.remove("show");
-         // $(PROGRESS).hide();
-
-         PICKUP_ADDRESS_FIELD.readOnly = false;
-         DEST_ADDRESS_FIELD.readOnly = false;
-         //DATE_TIME_FIELD.readOnly = false;
-
-         // LOCATION_BUTTON.classList.remove("show");
-         // CLEAR_BUTTON.classList.remove("show");
-         // LOC_DEST_BUTTON.classList.remove("show");
-         // CLEAR_DEST_BTN.classList.remove("show");
-
-
-         USER_MESSAGE_HEADING.innerHTML = "Where are you?";
       }
    });
 
