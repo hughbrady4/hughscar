@@ -191,17 +191,35 @@ function showRequest() {
 
   });
 
-  let requestTimeRef = firebase.database().ref("/requests")
-                     .child(mRequestId).child("pickup_time");
+  // let requestTimeRef = firebase.database().ref("/requests")
+  //                    .child(mRequestId).child("pickup_time");
+  //
+  //  requestTimeRef.on('value', (snapshot) => {
+  //     if (snapshot.exists()) {
+  //        //userMessage("Pickup time changed.");
+  //        let dateTime = snapshot.val();
+  //        dateField.value = dateTime;
+  //
+  //     }
+  //  });
 
-   requestTimeRef.on('value', (snapshot) => {
-      if (snapshot.exists()) {
-         //userMessage("Pickup time changed.");
-         let dateTime = snapshot.val();
-         dateField.value = dateTime;
+   let requestTimeRef = firebase.database().ref("/requests")
+                      .child(mRequestId).child("updated");
 
-      }
-   });
+    requestTimeRef.on('value', (updated) => {
+       if (updated.exists()) {
+          userMessage("Pickup time changed: " + updated.val());
+          let updatedDate = new Date();
+          updatedDate.setTime(updated.val());
+          dateString = updatedDate.toLocaleString();
+          dateField.value = dateString;
+
+       }
+    });
+
+
+
+
 
   const phoneField = document.createElement("input");
   phoneField.id = "rider-phone";

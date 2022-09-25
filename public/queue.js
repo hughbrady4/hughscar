@@ -96,7 +96,7 @@ function readRequests() {
       updated.setTime(data.val().updated);
       dateString = updated.toLocaleString();
 
-      newCol1.innerHTML = data.val().pickup_time;
+      newCol1.innerHTML = dateString;
       // newCol2.innerHTML = data.val().phone;
       // newCol3.innerHTML = data.val().pickup_address;
       // newCol4.innerHTML = data.val().dest_address;
