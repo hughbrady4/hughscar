@@ -157,7 +157,7 @@ BTN_REQUEST.onclick = function() {
      requestRef.update(updates).then(() => {
 
        const updates2 = {};
-       updates2['/status'] = "pending";
+       // updates2['/status'] = "pending";
        updates2['/request_key'] = requestRef.key;
        updates2['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
 
@@ -587,6 +587,25 @@ function initApp() {
           }
           return Promise.resolve();
       }).then(() => {
+
+         let driverRef = firebase.database().ref("/drivers/")
+                           .child(mUser.uid);
+
+         return driverRef.get();
+      }).then((driver) => {
+         console.log(driver.val());
+         if (driver.exists()) {
+            $("#link-drive").show();
+            let status = driver.val().status;
+            if (status == "online") {
+               location.replace("https://www.hughscar.com/driver.html");
+            } else {
+               $("#link-drive").show();
+            }
+         } else {
+            $("#link-drive").hide();
+         }
+
          addRequestListener();
          addPickupListener();
          addDestListener();
@@ -595,7 +614,7 @@ function initApp() {
          addDestAddrListener();
          addFareLenListener();
          addFareListener();
-         getDriverRecord();
+         // getDriverRecord();
          getDrivers();
          return Promise.resolve();
       }).catch((error) => {
