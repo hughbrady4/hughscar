@@ -16,30 +16,18 @@ firebase.initializeApp(firebaseConfig);
 firebase.analytics();
 //console.log(firebase);
 
-
-
 const AUTH_CONTAINER = document.getElementById('firebaseui-auth-container');
 let mUser;
 let mMap;
 let mPickupLoc;
 let mDestLoc;
+let mDriverLoc;
 let mDirectionsService;
 let mDirectionsRenderer;
 let mRequestId;
 
 function initApp() {
-   initMap();
-   let params = (new URL(document.location)).searchParams;
-   let request = params.get('request');
-   let url = window.location.href;
-   mRequestId = params.get('request');
-   //userMessage(mRequestId);
-   initAuth();
 
-
-}
-
-function initMap() {
    let zoom = 9;
 
    mMap = new google.maps.Map(document.getElementById("map"), {
@@ -49,10 +37,6 @@ function initMap() {
       gestureHandling: "cooperative",
       center: {lat: 38.87504573180474, lng: -104.73386842314846},
       zoom: zoom,
-      // restriction: {
-      //    latLngBounds: SERVICE_AREA_BOUNDS,
-      //    strictBounds: false,
-      // }
    });
 
    mDirectionsService = new google.maps.DirectionsService();
@@ -67,11 +51,23 @@ function initMap() {
       draggable: false,
       map: mMap,
    });
-}
+
+   mPickupRenderer = new google.maps.DirectionsRenderer({
+      //panel: directionsPanel,
+      //markerOptions: markerOptions,
+      draggable: false,
+      map: mMap,
+      polylineOptions: {strokeColor: "LightSalmon"},
+   });
 
 
 
-function initAuth() {
+
+   let params = (new URL(document.location)).searchParams;
+   let request = params.get('request');
+   let url = window.location.href;
+   mRequestId = params.get('request');
+   //userMessage(mRequestId);
 
    let ui = new firebaseui.auth.AuthUI(firebase.auth());
 
@@ -147,202 +143,82 @@ function showRequest() {
    let requestLocRef = firebase.database().ref("/requests")
                       .child(mRequestId).child("pickup_loc");
 
-   requestLocRef.on('value', (snapshot) => {
-      if (snapshot.exists()) {
-         mPickupLoc = snapshot.val();
+   requestLocRef.on('value', (pickupLoc) => {
+      if (pickupLoc.exists()) {
+         mPickupLoc = pickupLoc.val();
          routeFare();
-
+         routePickup();
+      } else {
+         mPickupLoc = null;
       }
    });
 
    let requestDestRef = firebase.database().ref("/requests")
                       .child(mRequestId).child("dest_loc");
 
-   requestDestRef.on('value', (snapshot) => {
-      if (snapshot.exists()) {
-         mDestLoc = snapshot.val();
+   requestDestRef.on('value', (destLoc) => {
+      if (destLoc.exists()) {
+         mDestLoc = destLoc.val();
          routeFare();
-
+      } else {
+         mDestLoc = null;
       }
    });
 
-   //routeFare(pickupLoc, destLoc);
+   let requestDriverRef = firebase.database().ref("/requests")
+                      .child(mRequestId).child("driver_loc");
 
-   const dateField = document.createElement("input");
-   dateField.id = "pickup-date-edit";
-   dateField.type = "datetime-local";
-   dateField.classList.add("form-control");
-   // dateField.value = dateTime;
-   dateField.addEventListener("change", () => {
-
-      let value = dateField.value;
-      if (value == "") {value = null}
-      const updates = {};
-      updates['/pickup_time'] = value;
-      updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
-
-      let requestRef = firebase.database()
-         .ref("/requests").child(mRequestId);
-      requestRef.update(updates).then(() => {
-         userMessage("Pickup time updated.");
-      }).catch((error) => {
-         userMessage(error.message);
-      });
-
-  });
-
-  let requestTimeRef = firebase.database().ref("/requests")
-                     .child(mRequestId).child("pickup_time");
-
-   requestTimeRef.on('value', (snapshot) => {
-      if (snapshot.exists()) {
-         //userMessage("Pickup time changed.");
-         let dateTime = snapshot.val();
-         dateField.value = dateTime;
+   requestDriverRef.on('value', (driverLoc) => {
+      if (driverLoc.exists()) {
+         mDriverLoc = driverLoc.val();
+         routePickup();
+      } else {
+         mDriverLoc = null;
 
       }
    });
-
-  const phoneField = document.createElement("input");
-  phoneField.id = "rider-phone";
-  phoneField.classList.add("form-control");
-  phoneField.type = "tel";
-  //phoneField.value = requestData.phone;
-  phoneField.addEventListener("change", () => {
-  });
-
-
-  let requestPhoneRef = firebase.database().ref("/requests")
-                     .child(mRequestId).child("phone");
-
-   requestPhoneRef.on('value', (snapshot) => {
-      if (snapshot.exists()) {
-         let phone = snapshot.val();
-         phoneField.value = phone;
-      }
-   });
-
-
-  const fareField = document.createElement("input");
-  fareField.id = "fare";
-  fareField.classList.add("form-control");
-  fareField.type = "text";
-  let formatter = new Intl.NumberFormat('en-US', {
-     style: 'currency',
-     currency: 'USD',
-
-     // These options are needed to round to whole numbers if that's what you want.
-     //minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
-     //maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
-  });
-
-
-
-  fareField.addEventListener("change", () => {
-  });
-
-
-   let requestFareRef = firebase.database().ref("/requests")
-                     .child(mRequestId).child("fare/fare_amount");
-
-   requestFareRef.on('value', (snapshot) => {
-      if (snapshot.exists()) {
-         let fare = snapshot.val();
-         let fareStr = formatter.format(fare);
-         fareField.value = fareStr;
-      }
-   });
-
-
-
-   const statusField = document.createElement("select");
-   statusField.id = "status";
-   statusField.classList.add("form-control");
-   // statusField.type = "text";
-
-   const optionCancel = document.createElement("option");
-   optionCancel.value = "canceled";
-   optionCancel.text = "canceled";
-   // optionCanceled.innerHTML = "canceled";
-
-   const optionComplete = document.createElement("option");
-   optionComplete.value = "completed";
-   optionComplete.text = "completed";
-   // optionCanceled.innerHTML = "canceled";
-
-   const optionAccept = document.createElement("option");
-   optionAccept.value = "accepted";
-   optionAccept.text = "accepted";
-
-   const optionPending = document.createElement("option");
-   optionPending.value = "pending";
-   optionPending.text = "pending";
-   // optionCanceled.innerHTML = "canceled";
-
-   statusField.appendChild(optionAccept);
-   statusField.appendChild(optionCancel);
-   statusField.appendChild(optionComplete);
-   statusField.appendChild(optionPending);
-
-
-   statusField.addEventListener("change", () => {
-
-      let value = statusField.value;
-      if (value == "") {value = null}
-      const updates = {};
-      updates['/status'] = value;
-      updates['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
-
-      let requestRef = firebase.database()
-         .ref("/requests").child(mRequestId);
-
-      requestRef.update(updates).then(() => {
-         userMessage("Status updated.");
-      }).catch((error) => {
-         userMessage(error.message);
-      });
-  });
 
    let requestStatusRef = firebase.database().ref("/requests")
                     .child(mRequestId).child("status");
 
-   requestStatusRef.on('value', (snapshot) => {
-      if (snapshot.exists()) {
-         let status = snapshot.val();
-         statusField.value = status;
-
-         if (status == "canceled") {
-            const deleteButton = document.createElement("button");
-            deleteButton.textContent = "Delete";
-            deleteButton.classList.add("btn");
-            deleteButton.classList.add("btn-primary");
-            mMap.controls[google.maps.ControlPosition.TOP_RIGHT].push(deleteButton);
-            deleteButton.addEventListener("click", () => {
-               let requestRef = firebase.database()
-                 .ref("/requests").child(mRequestId);
-               requestRef.set(null).then(() => {
-                  userMessage("Request deleted!");
-                  window.location.replace("/queue.html");
-               }).catch((error) => {
-                  userMessage(error.message);
-               });
-            });
-         }
+   requestStatusRef.on('value', (status) => {
+      if (status.exists()) {
       }
    });
-
-   const formField = document.createElement("div");
-   //formField.classList.add("container");
-   formField.classList.add("form-group");
-   formField.id = "address-form";
-   formField.appendChild(dateField);
-   formField.appendChild(phoneField);
-   formField.appendChild(fareField);
-   formField.appendChild(statusField);
 
    //mMap.controls[google.maps.ControlPosition.LEFT_TOP].push(formField);
 
 }
+
+function routePickup() {
+
+   if (mPickupLoc != null && mDriverLoc != null) {
+
+      let request = {
+         origin: mDriverLoc,
+         destination: mPickupLoc,
+         //waypoints: waypts,
+         //optimizeWaypoints: true,
+         travelMode: 'DRIVING',
+         //drivingOptions: { departureTime: departTime, trafficModel: "pessimistic"},
+      };
+
+      mDirectionsService.route(request, (response, status) => {
+         if (status == 'OK') {
+            mPickupRenderer.setDirections(response);
+            mPickupRenderer.setMap(mMap);
+            let duration = response.routes[0].legs[0].duration;
+            let distance = response.routes[0].legs[0].distance;
+
+
+         }
+      });
+   } else {
+      mPickupRenderer.setMap(null);
+   }
+}
+
+
 
 function routeFare() {
 
