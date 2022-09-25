@@ -21,6 +21,7 @@ firebaseApp.analytics();
 
 var worker;
 let mMap;
+let mRequestId;
 const mRiderQueue = new Map();
 let mDriverMarker;
 let mInfoWindow;
@@ -146,6 +147,7 @@ function initApp() {
          // mainContainer.classList.add("show");
          //getDriverLocation();
          getDriverStatus();
+
          mMap.controls[google.maps.ControlPosition.TOP_RIGHT].push(BTN_LOC);
          // getRiders();
          $("#btn-signout").show();
@@ -235,15 +237,15 @@ function setDriverMarker(atLatLng) {
 
 }
 
-function setDriverLocCallback() {
+function addDriverLocListener() {
 
-   let driverControlRecord = firebase.database().ref("/drivers")
+   let driverLocRef = firebase.database().ref("/drivers")
                       .child(mUser.uid).child("last_loc");
 
-   driverControlRecord.on('value', (snapshot) => {
-      if (snapshot.exists()) {
+   driverLocRef.on('value', (driverLoc) => {
+      if (driverLoc.exists()) {
          // console.log(snapshot.val());
-         let newLoc = snapshot.val();
+         let newLoc = driverLoc.val();
          mUserLat = newLoc.lat;
          mUserLng = newLoc.lng;
          if (mDriverMarker != null) {
@@ -256,28 +258,38 @@ function setDriverLocCallback() {
            setDriverMarker(newLoc);
          }
 
+         if (mRequestId != null) {
+            let requestRef = firebase.database().ref("/requests").child(mRequestId);
+            const UPDATES = {};
+            UPDATES['/driver_loc'] = newLoc;
+            UPDATES['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+            requestRef.update(UPDATES).then(() => {
+               userMessage("Request updated");
+            });
+         }
       }
    });
-
 }
 
 function getDriverStatus() {
 
 
-   let driverStatusRecord = firebase.database().ref("/drivers")
+   let driverStatusRef = firebase.database().ref("/drivers")
                      .child(mUser.uid).child("status");
 
-   driverStatusRecord.on('value', (snapshot) => {
+   driverStatusRef.on('value', (status) => {
 
       while (mMap.controls[google.maps.ControlPosition.TOP_CENTER].length > 0) {
          mMap.controls[google.maps.ControlPosition.TOP_CENTER].pop();
       }
 
-      if (snapshot.exists()) {
-         mStatus = snapshot.val();
+      if (status.exists()) {
+         mStatus = status.val();
          console.log(mStatus);
          if (mStatus == "online") {
-            setDriverLocCallback();
+
+            addRequestIdListener();
+
 
             requestPermission();
             getMessageToken();
@@ -349,39 +361,20 @@ function requestPermission() {
 
 
 
-function getRequests() {
+function addRequestIdListener() {
 
-   let requests = firebase.database()
-      .ref("/requests")
-      .orderByChild("status")
-      .equalTo("pending");
-      // .limitToFirst(1);
+   let requestIdRef = firebase.database().ref("/drivers")
+      .child(mUser.uid).child("requestId");
 
-   requests.on('child_added', (snapshot) => {
+   requestIdRef.on('value', (requestId) => {
+      if (requestId.exists()) {
+         mRequestId = requestId.val();
+         addDriverLocListener();
 
-      let request = snapshot.val();
-
-      displayRequest(snapshot);
-      sendDriverNotice(request.pickup_address);
-      PICKUP_ADDRESS_FIELD.innerHTML = request.pickup_address;
-      DEST_ADDRESS_FIELD.innerHTML = request.dest_address;
-      RIDER_PHONE_FIELD.innerHTML = request.phone;
-
-      $("#myModal").modal();
+      } else {
+         mRequestId = null;
+      }
    });
-
-   requests.on('child_changed', (snapshot) => {
-     sendDriverNotice(snapshot.val());
-
-   })
-
-   requests.on('child_removed', (snapshot) => {
-     console.log(snapshot.key);
-     console.log(snapshot.val());
-     removeRiderMarker(snapshot);
-
-   });
-
 }
 
 function sendDriverNotice(value) {
