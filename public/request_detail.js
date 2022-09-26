@@ -260,3 +260,10 @@ function userMessage(message) {
    // After 3 seconds, remove the show class from DIV
    setTimeout(function(){ sb.classList.remove("show"); }, 3000);
 }
+
+function signOut() {
+
+   firebase.auth().signOut();
+   userMessage("GoodBye!");
+
+}
