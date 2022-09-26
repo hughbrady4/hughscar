@@ -100,6 +100,7 @@ function initAuth() {
          $("#btn-signin").hide();
          //getRideRequest();
          showRequest();
+         getDrivers();
 
       } else {
          $("#btn-signout").hide();
@@ -349,6 +350,25 @@ function showRequest() {
       }
    });
 
+   const driverField = document.createElement("input");
+   driverField.id = "driver-uid";
+   driverField.classList.add("form-control");
+   // phoneField.type = "tel";
+   //phoneField.value = requestData.phone;
+   phoneField.addEventListener("change", () => {
+   });
+
+
+   let driverRef = firebase.database().ref("/requests")
+                      .child(mRequestId).child("driver");
+
+   driverRef.on('value', (driver) => {
+       if (driver.exists()) {
+          let driverId = driver.val();
+          driverField.value = driverId;
+       }
+    });
+
    const formField = document.createElement("div");
    //formField.classList.add("container");
    formField.classList.add("form-group");
@@ -357,6 +377,8 @@ function showRequest() {
    formField.appendChild(phoneField);
    formField.appendChild(fareField);
    formField.appendChild(statusField);
+   formField.appendChild(driverField);
+
 
    mMap.controls[google.maps.ControlPosition.LEFT_TOP].push(formField);
 
@@ -391,6 +413,102 @@ function routeFare() {
 }
 
 
+const DRIVERS = new Map();
+const INFO_WINDOWS = new Map();
+
+function getDrivers() {
+
+   let driversRecord = firebase.database().ref("/drivers")
+      .orderByChild("status").equalTo("online");
+   //console.log(mUser.uid);
+   //console.log(driversRecord);
+
+   driversRecord.on('child_added', (driver) => {
+      if (driver.exists()) {
+
+         let key = driver.key;
+         let loc = driver.val().last_loc;
+
+         let marker = new google.maps.Marker({
+            position: loc,
+            map: mMap,
+            icon: "/images/icons8-car-24.png"
+         });
+
+         DRIVERS.set(key, marker);
+
+         const CONTENT_STRING =
+            '<div id="content">' +
+            '<div id="siteNotice">' +
+            "</div>" +
+            // '<h5 id="firstHeading" class="firstHeading">' + fareStr + '</h5>' +
+
+            '<div id="bodyContent">' +
+            "<button id=\"btn-driver\" onclick=\"setDriver('" + key + "')\"" +
+            ' class="btn btn-primary">Select</button>' +
+            "<p>Driver key is : <b>" + key + "</b>." +
+            "</div>" +
+            "</div>";
+
+         let infoWindow = new google.maps.InfoWindow();
+         infoWindow.setContent(CONTENT_STRING);
+
+         infoWindow.open({
+            anchor: marker,
+            map: mMap,
+            shouldFocus: false,
+         });
+
+         INFO_WINDOWS.set(key, marker);
+      }
+   });
+
+   driversRecord.on('child_changed', (driver) => {
+      if (driver.exists()) {
+
+         let key = driver.key;
+         let loc = driver.val().last_loc;
+
+         let marker = DRIVERS.get(key);
+         marker.setPosition(loc);
+         // routePickup();
+
+
+      }
+   });
+
+   driversRecord.on('child_removed', (driver) => {
+      if (driver.exists()) {
+
+         let key = driver.key;
+         let loc = driver.val().last_loc;
+
+         let marker = DRIVERS.get(key);
+
+         marker.setMap(null);
+         DRIVERS.delete(key);
+         // routePickup();
+
+      }
+   });
+
+}
+
+function setDriver(key) {
+   // userMessage("Driver: " + key);
+   let requestRef = firebase.database().ref("/requests").child(mRequestId);
+
+   const UPDATES = {};
+   UPDATES['/driver'] = key;
+   UPDATES['/updated' ] = firebase.database.ServerValue.TIMESTAMP;
+   requestRef.update(UPDATES).then(() => {
+      userMessage("Request updated");
+   });
+
+}
+
+
+
 function userMessage(message) {
    // Get the snackbar DIV
    let sb = document.getElementById("snackbar");
@@ -401,4 +519,11 @@ function userMessage(message) {
 
    // After 3 seconds, remove the show class from DIV
    setTimeout(function(){ sb.classList.remove("show"); }, 3000);
+}
+
+function signOut() {
+
+   firebase.auth().signOut();
+   userMessage("GoodBye!");
+
 }
