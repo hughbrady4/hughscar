@@ -27,6 +27,7 @@ let mDirectionsRenderer;
 let mPickupRenderer;
 let mLocationButton;
 let mRequestInProgress = false;
+let mRequestId;
 let mRideRequestRef;
 let mDestInfoWindow;
 
@@ -1007,9 +1008,25 @@ function addRequestListener() {
 
    requestKeyRef.on('value', (request) => {
       if (request.exists()) {
-         let page = "https://www.hughscar.com/request_detail.html?request=" + request.val();
-         location.replace(page);
+         mRequestId = request.val();
+         let requestRef = firebase.database().ref("/requests").child(mRequestId);
+
+         requestRef.on('value', (requestRec) => {
+            if (requestRec.exists()) {
+               let page = "https://www.hughscar.com/request_detail.html?request=" + mRequestId;
+               location.replace(page);
+            } else {
+               requestKeyRef.remove();
+            }
+         });
+
+
       } else {
+         if (mRequestId != null) {
+            let requestRef = firebase.database().ref("/requests").child(mRequestId);
+            requestRef.off();
+            mRequestId = null;  
+         }
 
       }
    });
