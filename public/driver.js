@@ -147,6 +147,7 @@ function initApp() {
          // mainContainer.classList.add("show");
          //getDriverLocation();
          getDriverStatus();
+         addDriverLocListener();
 
          mMap.controls[google.maps.ControlPosition.TOP_RIGHT].push(BTN_LOC);
          // getRiders();
@@ -170,12 +171,6 @@ function initApp() {
 
 
 }
-
-
-
-
-
-
 
 function requestLocation() {
   if (navigator.geolocation) {
@@ -288,15 +283,15 @@ function getDriverStatus() {
          console.log(mStatus);
          if (mStatus == "online") {
 
-            addRequestIdListener();
-
-
-            requestPermission();
-            getMessageToken();
-
-            if (typeof(worker) == "undefined") {
-               worker = new Worker("driver_location.js");
-            }
+            // addRequestIdListener();
+            //
+            //
+            // requestPermission();
+            // getMessageToken();
+            //
+            // if (typeof(worker) == "undefined") {
+            //    worker = new Worker("driver_location.js");
+            // }
 
             mMap.controls[google.maps.ControlPosition.TOP_CENTER].push(OFFLINE_BTN);
 
@@ -311,10 +306,10 @@ function getDriverStatus() {
 
             mMap.controls[google.maps.ControlPosition.TOP_CENTER].push(ONLINE_BTN);
 
-            if (typeof(worker) != "undefined") {
-               worker.terminate();
-               worker = undefined;
-            }
+            // if (typeof(worker) != "undefined") {
+            //    worker.terminate();
+            //    worker = undefined;
+            // }
 
          } else {
             $("#btn-group-offline").show();
