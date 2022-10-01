@@ -23,6 +23,12 @@ let mRates;
 let mFare;
 let mDestMarker;
 let mDirectionsService;
+let mDistanceService;
+
+let mOrigins = [];
+let mMarkers = [];
+let mDriverWindows = [];
+
 let mDirectionsRenderer;
 let mPickupRenderer;
 let mLocationButton;
@@ -272,6 +278,77 @@ function authenticate() {
 
 function calcDistance() {
 
+   for (let k = 0; k < mDriverWindows.length; k++) {
+      mDriverWindows[k].close();
+   }
+   mDriverWindows.length = 0;
+   mDriverWindows = [];
+
+
+   let destinations = [mPickupMarker.getPosition()];
+
+   let distanceRequest = {
+      origins: mOrigins,
+      destinations: destinations,
+      travelMode: 'DRIVING',
+      avoidHighways: false,
+      avoidTolls: false,
+   }
+
+   mDistanceService.getDistanceMatrix(distanceRequest,  (response, status) => {
+      if (status == 'OK') {
+
+        // for (let k = 0; k < INFO_WINDOWS.length; k++) {
+        //    INFO_WINDOWS[k].close();
+        // }
+        // INFO_WINDOWS.length = 0;
+
+        let origins = response.originAddresses;
+        let destinations = response.destinationAddresses;
+
+        console.log(origins);
+        console.log(destinations);
+
+        for (let i = 0; i < origins.length; i++) {
+           let results = response.rows[i].elements;
+           let infoString = "";
+           let element = results[0];
+           if (element.status == "OK") {
+              let distance = element.distance.text;
+              let distanceValue = element.distance.value;
+              let duration = element.duration.text;
+              let value = element.duration.value;
+
+               let from = origins[i];
+               let to = destinations[0];
+
+               //let strDistance0 = "From: " + origins[i];
+               let strDistance1 = "<p>To: " + destinations[0] +
+                             ", " + distance + ", " + duration + "</p>";
+
+               infoString += strDistance1;
+           } else infoString += "<p>" + element.status + "</p>";
+
+           const infoWindow = new google.maps.InfoWindow({
+              content: infoString,
+           });
+
+           infoWindow.open(mMap, mMarkers[i]);
+           mMarkers[i].addListener("click", () => {
+              infoWindow.open({
+                 anchor: mMarkers[i],
+                 mMap,
+                 shouldFocus: false,
+              });
+           });
+
+           mDriverWindows.push(infoWindow);
+        }
+     } else {
+        userMessage(status);
+     }
+  });
+
 
 }
 
@@ -402,6 +479,8 @@ function initApp() {
       draggable: false,
       map: mMap,
    });
+
+   mDistanceService = new google.maps.DistanceMatrixService();
 
 
    const center = { lat: 50.064192, lng: -130.605469 };
@@ -616,7 +695,7 @@ function initApp() {
          addFareLenListener();
          addFareListener();
          // getDriverRecord();
-         getDrivers();
+         getDrivers2();
          return Promise.resolve();
       }).catch((error) => {
          userMessage(error.message);
@@ -808,7 +887,7 @@ function addPickupListener() {
          LOCATION_BUTTON.classList.add("show");
          CLEAR_BUTTON.classList.remove("show");
       }
-      //routePickup();
+      calcDistance();
       routeFare();
 
    });
@@ -1025,7 +1104,7 @@ function addRequestListener() {
          if (mRequestId != null) {
             let requestRef = firebase.database().ref("/requests").child(mRequestId);
             requestRef.off();
-            mRequestId = null;  
+            mRequestId = null;
          }
 
       }
@@ -1104,8 +1183,8 @@ function getDrivers2() {
 
    driversRecord.on('value', (drivers) => {
 
-      let origins = [];
-
+      mOrigins = [];
+      mMarkers = [];
 
       drivers.forEach((driver) => {
          let driverUid = driver.key;
@@ -1113,75 +1192,20 @@ function getDrivers2() {
 
          let key = driver.key;
          let driver_loc = driverData.last_loc;
-         origins.push(driver_loc);
-         DRIVERS.set(driverUid, driverData);
+
+
+         let driverMarker = new google.maps.Marker({
+            position: driver_loc,
+            map: mMap,
+            icon: "/images/icons8-car-24.png"
+         });
+
+         mOrigins.push(driver_loc);
+         mMarkers.push(driverMarker);
+         DRIVERS.set(key, driverData);
       });
+      calcDistance();
 
-      let destinations = [mPickupMarker.getPosition()];
-
-      // for (let i = 0; i < userMarkers.length; i++) {
-      //    origins.push(userMarkers[i].getPosition());
-      //    destinations.push(userMarkers[i].getPosition());
-      // }
-
-
-      let distanceRequest = {
-         origins: origins,
-         destinations: destinations,
-         travelMode: 'DRIVING',
-         avoidHighways: false,
-         avoidTolls: false,
-      }
-
-      distanceService.getDistanceMatrix(distanceRequest,  (response, status) => {
-         if (status == 'OK') {
-
-            for (let k = 0; k < INFO_WINDOWS.length; k++) {
-               INFO_WINDOWS[k].close();
-            }
-            infoWindows.length = 0;
-
-            let origins = response.originAddresses;
-            let destinations = response.destinationAddresses;
-
-            for (let i = 0; i < origins.length; i++) {
-               let results = response.rows[i].elements;
-               let infoString = "";
-
-               for (var j = 0; j < results.length; j++) {
-
-                  if (i != j) {
-
-                     let element = results[j];
-                     if (element.status == "OK") {
-                       let distance = element.distance.text;
-                       let distanceValue = element.distance.value;
-                       let duration = element.duration.text;
-                       let value = element.duration.value;
-
-                       let from = origins[i];
-                       let to = destinations[j];
-
-                       //let strDistance0 = "From: " + origins[i];
-                       let strDistance1 = "<p>To: " + destinations[j] +
-                                         ", " + distance + ", " + duration + "</p>";
-
-                       infoString += strDistance1;
-                     } else infoString += "<p>" + element.status + "</p>";
-                  }
-               }
-
-               const infoWindow = new google.maps.InfoWindow({
-                  content: infoString,
-               });
-
-               //infoWindow.open(map, userMarkers[i]);
-               INFO_WINDOWS.push(infoWindow);
-            }
-         } else {
-            errorMessage(status);
-         }
-      });
    });
 }
 
